@@ -1,0 +1,18 @@
+{"_purpose": "這個檔案是 MOI_test 工作區的根設定，負責管理前後端共用指令。",
+  "name": "moi-test",
+  "private": true,
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev:frontend": "npm --workspace frontend run dev",
+    "dev:backend": "npm --workspace backend run dev",
+    "build": "npm --workspace frontend run build",
+    "test": "npm --workspace frontend run test",
+    "lint": "npm --workspace frontend run lint"
+  }
+}

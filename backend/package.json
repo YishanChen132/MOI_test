@@ -1,0 +1,12 @@
+{"_purpose": "這個檔案是 MOI_test 後端靜態伺服器的套件設定與啟動指令。",
+  "name": "moi-test-backend",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "node --watch server.mjs",
+    "start": "node server.mjs"
+  }
+}
