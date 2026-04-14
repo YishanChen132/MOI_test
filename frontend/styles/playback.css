@@ -1,0 +1,142 @@
+/* 這個檔案專門放底部 Timebar 的軌道、把手和播放資訊樣式。 */
+.moi-playback-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1rem 1.25rem 1.1rem;
+}
+
+.moi-playback-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.moi-playback-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.moi-playback-speed-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.moi-playback-readout {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  color: rgb(226 232 240);
+}
+
+.moi-playback-readout strong {
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.moi-playback-readout small {
+  margin-left: 0.75rem;
+  color: rgb(148 163 184);
+  font-size: 0.8rem;
+}
+
+.moi-playback-track {
+  position: relative;
+  height: 4.75rem;
+  width: 100%;
+  cursor: pointer;
+  user-select: none;
+  touch-action: none;
+}
+
+.moi-playback-track-rail {
+  position: absolute;
+  inset-inline: 0;
+  top: 1.2rem;
+  height: 0.85rem;
+  border: 1px solid rgb(255 255 255 / 0.08);
+  border-radius: 999px;
+  background:
+    linear-gradient(90deg, rgb(31 41 55 / 0.92) 0%, rgb(17 24 39 / 0.92) 100%);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.02);
+}
+
+.moi-playback-window {
+  position: absolute;
+  top: 0.9rem;
+  height: 1.45rem;
+  border: 1px solid rgb(96 165 250 / 0.55);
+  border-radius: 999px;
+  background:
+    linear-gradient(90deg, rgb(56 189 248 / 0.22) 0%, rgb(59 130 246 / 0.5) 100%);
+  box-shadow:
+    0 0 0 1px rgb(96 165 250 / 0.1),
+    0 14px 28px rgb(14 165 233 / 0.18);
+}
+
+.moi-playback-window-handle {
+  position: absolute;
+  top: 0.78rem;
+  width: 0.7rem;
+  height: 1.7rem;
+  border: 1px solid rgb(255 255 255 / 0.65);
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.94);
+  box-shadow:
+    0 0 0 2px rgb(59 130 246 / 0.16),
+    0 8px 18px rgb(15 23 42 / 0.28);
+  transform: translateX(-50%);
+  cursor: col-resize;
+}
+
+.moi-playback-head {
+  position: absolute;
+  top: 0.42rem;
+  width: 0.95rem;
+  height: 2.45rem;
+  border: 2px solid rgb(255 255 255 / 0.95);
+  border-radius: 999px;
+  background: rgb(248 250 252);
+  box-shadow:
+    0 0 0 4px rgb(255 255 255 / 0.08),
+    0 10px 24px rgb(15 23 42 / 0.42);
+  transform: translateX(-50%);
+}
+
+.moi-playback-caption {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  color: rgb(148 163 184);
+  font-size: 0.84rem;
+}
+
+.moi-playback-boundary-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  color: rgb(191 219 254);
+  font-size: 0.86rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+@media (max-width: 1024px) {
+  .moi-playback-toolbar,
+  .moi-playback-caption,
+  .moi-playback-boundary-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .moi-playback-readout {
+    flex-wrap: wrap;
+  }
+}

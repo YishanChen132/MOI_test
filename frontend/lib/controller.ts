@@ -13,6 +13,7 @@ import type {
 } from '../types';
 
 export const DEFAULT_TIME_RANGE: TimeRangeMilliseconds = getInitialPlaybackRange();
+const MIN_SCENARIO_WINDOW_MS = 60_000;
 
 export const DEFAULT_LAYERS: LayerVisibility = {
   trips: false,
@@ -45,16 +46,22 @@ export function createAppliedScenario(
 }
 
 export function clampTimeRange([start, end]: TimeRangeMilliseconds): TimeRangeMilliseconds {
-  const fixedWindow = Math.min(PLAYBACK_WINDOW_MS, PLAYBACK_DOMAIN[1] - PLAYBACK_DOMAIN[0]);
+  const minWindow = Math.min(MIN_SCENARIO_WINDOW_MS, PLAYBACK_DOMAIN[1] - PLAYBACK_DOMAIN[0]);
   const safeStart = Number.isFinite(start) ? start : DEFAULT_TIME_RANGE[0];
   const safeEnd = Number.isFinite(end) ? end : DEFAULT_TIME_RANGE[1];
-  const preferredEnd = Math.max(safeEnd, safeStart + fixedWindow);
+  const clampedStart = Math.max(
+    PLAYBACK_DOMAIN[0],
+    Math.min(safeStart, PLAYBACK_DOMAIN[1] - minWindow),
+  );
   const clampedEnd = Math.max(
-    PLAYBACK_DOMAIN[0] + fixedWindow,
-    Math.min(preferredEnd, PLAYBACK_DOMAIN[1]),
+    clampedStart + minWindow,
+    Math.min(safeEnd, PLAYBACK_DOMAIN[1]),
   );
 
-  return [clampedEnd - fixedWindow, clampedEnd];
+  return [
+    Math.max(PLAYBACK_DOMAIN[0], Math.min(clampedStart, clampedEnd - minWindow)),
+    clampedEnd,
+  ];
 }
 
 export function sortModes(modes: readonly number[]): ModeCode[] {

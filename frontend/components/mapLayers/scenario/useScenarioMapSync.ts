@@ -1,8 +1,8 @@
 // 這個檔案負責把查回來的資料轉成 kepler dataset，並在圖層或透明度改變時同步更新地圖。
 import {useEffect, useRef, type MutableRefObject} from 'react';
-import {buildArcDataset} from '../../layers/odArcLayer/arcKepler';
+import {buildArcDatasets} from '../../layers/odArcLayer/arcKepler';
 import {flattenArcRows} from '../../layers/odArcLayer/arcTransform';
-import {buildTripDataset} from '../../layers/tripsLayer/tripKepler';
+import {buildTripDatasets} from '../../layers/tripsLayer/tripKepler';
 import {segmentTripRows} from '../../layers/tripsLayer/tripTransform';
 import {
   buildHeatmapDataset,
@@ -136,7 +136,7 @@ export function useScenarioMapSync({
       const heatmapRows = flattenHeatmapRows(tripRows, applied.modes, playbackRangeSeconds);
 
       nextTripEntry = {
-        tripDataset: buildTripDataset(tripFeatures),
+        tripDatasets: buildTripDatasets(tripFeatures),
         heatmapDataset: buildHeatmapDataset(heatmapRows),
         tripSegments: tripFeatures.features.length,
         heatmapPoints: heatmapRows.length,
@@ -152,7 +152,7 @@ export function useScenarioMapSync({
       );
 
       nextArcEntry = {
-        arcDataset: buildArcDataset(arcRows),
+        arcDatasets: buildArcDatasets(arcRows),
         arcRows: arcRows.length,
       };
       arcCacheRef.current.set(scenarioCacheKey, nextArcEntry);

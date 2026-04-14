@@ -22,6 +22,10 @@ function sliderValueToOpacity(value: number): number {
   return Math.pow(normalized, 1.6);
 }
 
+function countEnabledLayers(layers: {trips: boolean; arc: boolean; heatmap: boolean}): number {
+  return [layers.trips, layers.arc, layers.heatmap].filter(Boolean).length;
+}
+
 export function ControlMenu() {
   const draft = useRoomStore((state) => state.moi.draft);
   const runStatus = useRoomStore((state) => state.moi.runStatus);
@@ -31,6 +35,8 @@ export function ControlMenu() {
   const setLayerEnabled = useRoomStore((state) => state.moi.setLayerEnabled);
   const setLayerOpacity = useRoomStore((state) => state.moi.setLayerOpacity);
   const setModeEnabled = useRoomStore((state) => state.moi.setModeEnabled);
+  const enabledLayerCount = countEnabledLayers(draft.layers);
+  const layerSummary = summarizeLayers(draft.layers);
 
   return (
     <div className="flex h-full flex-col gap-4">
@@ -45,15 +51,15 @@ export function ControlMenu() {
           <div className="grid grid-cols-2 gap-3 text-xs text-muted-foreground sm:grid-cols-3">
             <div className="moi-mini-stat">
               <span>Status</span>
-              <strong>{runStatus}</strong>
+              <strong>{runStatus.toUpperCase()}</strong>
             </div>
             <div className="moi-mini-stat">
               <span>Layers</span>
-              <strong>{summarizeLayers(draft.layers)}</strong>
+              <strong title={layerSummary}>{enabledLayerCount} active</strong>
             </div>
             <div className="moi-mini-stat">
               <span>Playback</span>
-              <strong>{isPlaying ? 'Playing' : 'Paused'}</strong>
+              <strong>{isPlaying ? 'PLAYING' : 'PAUSED'}</strong>
             </div>
           </div>
         </CardHeader>
@@ -61,7 +67,9 @@ export function ControlMenu() {
           <div className="space-y-3">
             <div className="flex items-center justify-between text-sm font-medium">
               <span>Layers</span>
-              <Badge variant="outline">{summarizeLayers(draft.layers)}</Badge>
+              <Badge className="moi-section-badge" title={layerSummary} variant="outline">
+                {enabledLayerCount} active
+              </Badge>
             </div>
             <div className="space-y-2">
               <div className="moi-layer-control-row">

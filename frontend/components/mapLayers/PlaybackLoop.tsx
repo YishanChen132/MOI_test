@@ -11,15 +11,14 @@ export function PlaybackLoop({mapId}: PlaybackLoopProps) {
   const isPlaying = useRoomStore((state) => state.moi.isPlaying);
   const tickPlayback = useRoomStore((state) => state.moi.tickPlayback);
   const timeRange = useRoomStore((state) => state.moi.applied.timeRange);
-  const timeScale = useRoomStore((state) => state.moi.timeScale);
 
   useEffect(() => {
     if (!mapId) {
       return;
     }
 
-    syncPlaybackWindow(roomStore, mapId, timeRange, timeScale);
-  }, [mapId, timeRange, timeScale]);
+    syncPlaybackWindow(roomStore, mapId, timeRange);
+  }, [mapId, timeRange]);
 
   useEffect(() => {
     if (!mapId || !isPlaying) {

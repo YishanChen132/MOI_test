@@ -1,0 +1,82 @@
+/* 這個檔案專門放頁面排版和地圖容器尺寸規則。 */
+.moi-shell {
+  display: grid;
+  grid-template-columns: minmax(300px, 360px) minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr) auto;
+  gap: 1rem;
+  width: 100%;
+  height: 100%;
+  padding: 1rem;
+}
+
+.moi-panel-column {
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.moi-map-column {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  height: 100%;
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.moi-map-column > * {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+}
+
+.moi-playback-row {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  min-width: 0;
+}
+
+.kepler-gl,
+.mapboxgl-map,
+.maplibregl-map,
+.mapboxgl-canvas-container,
+.maplibregl-canvas-container,
+.mapboxgl-canvas,
+.maplibregl-canvas {
+  width: 100%;
+  height: 100%;
+}
+
+.kepler-gl {
+  min-height: 100%;
+}
+
+.kepler-gl [class*='bottom-widget'] {
+  display: none !important;
+}
+
+@media (max-width: 1024px) {
+  .moi-shell {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr) auto;
+  }
+
+  .moi-panel-column {
+    grid-column: 1;
+    grid-row: 1;
+    overflow: visible;
+  }
+
+  .moi-map-column {
+    grid-column: 1;
+    grid-row: 2;
+    min-height: 60vh;
+  }
+
+  .moi-playback-row {
+    grid-column: 1;
+    grid-row: 3;
+  }
+}

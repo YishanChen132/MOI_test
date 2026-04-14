@@ -2,30 +2,30 @@
 import {
   setAnimationConfig,
   setFilter,
-  updateFilterAnimationSpeed,
 } from '@kepler.gl/actions';
 import {processRowObject} from '@kepler.gl/processors';
 import type {KeplerSliceState} from '@sqlrooms/kepler';
 import type {StoreApi} from 'zustand';
 import {
-  ARC_DATASET_ID,
+  ARC_DATASET_IDS,
   ARC_TIME_FILTER_ID,
   ARC_TOOLTIP_FIELDS,
-  buildArcDataset,
-  buildArcLayerConfig,
+  buildArcDatasets,
+  buildArcLayerConfigs,
   buildArcTimeFilter,
+  isArcDatasetId,
 } from '../components/layers/odArcLayer/arcKepler';
 import {
-  buildTripDataset,
-  buildTripLayerConfig,
-  TRIP_DATASET_ID,
+  buildTripDatasets,
+  buildTripLayerConfigs,
+  isTripDatasetId,
+  TRIP_DATASET_IDS,
   TRIP_TOOLTIP_FIELDS,
 } from '../components/layers/tripsLayer/tripKepler';
 import {buildModeColorRange} from '../constants/modes';
 import {
   millisecondsOfDayToPlaybackEpochMs,
   PLAYBACK_DOMAIN,
-  PLAYBACK_INITIAL_SPEED,
   PLAYBACK_TIMEZONE,
   PLAYBACK_TIME_FORMAT,
 } from './timeplayback';
@@ -39,6 +39,7 @@ import type {
 } from '../types';
 
 const MODE_COLOR_RANGE = buildModeColorRange();
+const KEPLER_PASSIVE_SPEED = 1;
 const DEFAULT_MAP_STATE = {
   bearing: 18,
   dragRotate: true,
@@ -50,8 +51,6 @@ const DEFAULT_MAP_STATE = {
 };
 
 export const MAP_DATASET_IDS = {
-  trips: TRIP_DATASET_ID,
-  arc: ARC_DATASET_ID,
   heatmap: 'moi_heatmap_points',
 } as const;
 
@@ -115,7 +114,7 @@ export function buildMapDatasets(
   arcRows: ArcDatum[],
   heatmapRows: HeatmapDatum[],
 ): DatasetDescriptor[] {
-  return [buildTripDataset(trips), buildArcDataset(arcRows), buildHeatmapDataset(heatmapRows)].filter(
+  return [...buildTripDatasets(trips), ...buildArcDatasets(arcRows), buildHeatmapDataset(heatmapRows)].filter(
     (dataset): dataset is DatasetDescriptor => dataset !== null,
   );
 }
@@ -130,19 +129,27 @@ export function buildKeplerMapConfig(
   const filters = [];
   const playbackDomainMs = PLAYBACK_DOMAIN.map(millisecondsOfDayToPlaybackEpochMs) as [number, number];
   const playbackValueMs = applied.timeRange.map(millisecondsOfDayToPlaybackEpochMs) as [number, number];
+  const arcDatasetIds = datasetIds.filter(isArcDatasetId);
 
-  if (datasetIds.includes(TRIP_DATASET_ID)) {
-    layers.push(buildTripLayerConfig(applied.layers.trips, layerOpacity.trips));
+  if (datasetIds.some(isTripDatasetId)) {
+    layers.push(...buildTripLayerConfigs(applied.layers.trips, layerOpacity.trips));
   }
 
-  if (datasetIds.includes(ARC_DATASET_ID)) {
-    layers.push(buildArcLayerConfig(applied.layers.arc, layerOpacity.arc));
-    filters.push(buildArcTimeFilter(playbackDomainMs, playbackValueMs));
+  if (arcDatasetIds.length > 0) {
+    layers.push(...buildArcLayerConfigs(applied.layers.arc, layerOpacity.arc));
+    filters.push(buildArcTimeFilter(arcDatasetIds, playbackDomainMs, playbackValueMs));
   }
 
   if (datasetIds.includes(MAP_DATASET_IDS.heatmap)) {
     layers.push(buildHeatmapLayerConfig(applied.layers.heatmap));
   }
+
+  const tripTooltipFields = Object.fromEntries(
+    TRIP_DATASET_IDS.map((datasetId) => [datasetId, TRIP_TOOLTIP_FIELDS]),
+  );
+  const arcTooltipFields = Object.fromEntries(
+    ARC_DATASET_IDS.map((datasetId) => [datasetId, ARC_TOOLTIP_FIELDS]),
+  );
 
   return {
     version: 'v1' as const,
@@ -154,8 +161,8 @@ export function buildKeplerMapConfig(
           tooltip: {
             enabled: true,
             fieldsToShow: {
-              [TRIP_DATASET_ID]: TRIP_TOOLTIP_FIELDS,
-              [ARC_DATASET_ID]: ARC_TOOLTIP_FIELDS,
+              ...tripTooltipFields,
+              ...arcTooltipFields,
               [MAP_DATASET_IDS.heatmap]: HEATMAP_TOOLTIP_FIELDS,
             },
             compareMode: false,
@@ -170,7 +177,7 @@ export function buildKeplerMapConfig(
         animationConfig: {
           currentTime: playbackValueMs[1],
           domain: playbackDomainMs,
-          speed: PLAYBACK_INITIAL_SPEED,
+          speed: KEPLER_PASSIVE_SPEED,
         },
       },
       mapState: {
@@ -206,7 +213,9 @@ export function replaceMapDatasets(
   const datasetIds = datasets.map((dataset) => dataset.id);
   const currentMap = state.kepler.map[mapId];
   const currentDatasetIds = Object.keys(currentMap?.visState.datasets ?? {}).filter((datasetId) => {
-    return Object.values(MAP_DATASET_IDS).includes(datasetId as (typeof MAP_DATASET_IDS)[keyof typeof MAP_DATASET_IDS]);
+    return isTripDatasetId(datasetId) ||
+      isArcDatasetId(datasetId) ||
+      Object.values(MAP_DATASET_IDS).includes(datasetId as (typeof MAP_DATASET_IDS)[keyof typeof MAP_DATASET_IDS]);
   });
 
   const addDataToMap = (state.kepler as KeplerSliceState['kepler'] & {
@@ -246,7 +255,6 @@ export function syncPlaybackWindow(
   roomStore: RoomStoreWithKepler,
   mapId: string,
   timeRange: TimeRangeMilliseconds,
-  timeScale: number,
 ): void {
   const currentMap = roomStore.getState().kepler.map[mapId];
   const filterIndex = currentMap?.visState.filters.findIndex(
@@ -258,10 +266,6 @@ export function syncPlaybackWindow(
 
   if (filterIndex != null && filterIndex >= 0) {
     roomStore.getState().kepler.dispatchAction(mapId, setFilter(filterIndex, 'value', playbackValueMs));
-    roomStore.getState().kepler.dispatchAction(
-      mapId,
-      updateFilterAnimationSpeed(filterIndex, timeScale),
-    );
   }
 
   roomStore.getState().kepler.dispatchAction(
@@ -269,7 +273,7 @@ export function syncPlaybackWindow(
     setAnimationConfig({
       currentTime: playbackValueMs[1],
       domain: playbackDomainMs,
-      speed: timeScale,
+      speed: KEPLER_PASSIVE_SPEED,
       timeSteps: null,
       defaultTimeFormat: null,
       timeFormat: PLAYBACK_TIME_FORMAT,

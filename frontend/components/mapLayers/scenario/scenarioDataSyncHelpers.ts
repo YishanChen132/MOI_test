@@ -4,14 +4,14 @@ import type {DatasetDescriptor} from '../../../lib/kepler';
 import type {BenchmarkCounts} from '../../../types';
 
 export type TripCacheEntry = {
-  tripDataset: DatasetDescriptor | null;
+  tripDatasets: DatasetDescriptor[];
   heatmapDataset: DatasetDescriptor | null;
   tripSegments: number;
   heatmapPoints: number;
 };
 
 export type ArcCacheEntry = {
-  arcDataset: DatasetDescriptor | null;
+  arcDatasets: DatasetDescriptor[];
   arcRows: number;
 };
 
@@ -30,8 +30,8 @@ export function buildDatasetList(
   arcCacheEntry: ArcCacheEntry | null,
 ): DatasetDescriptor[] {
   return [
-    tripCacheEntry?.tripDataset ?? null,
-    arcCacheEntry?.arcDataset ?? null,
+    ...(tripCacheEntry?.tripDatasets ?? []),
+    ...(arcCacheEntry?.arcDatasets ?? []),
     tripCacheEntry?.heatmapDataset ?? null,
   ].filter((dataset): dataset is DatasetDescriptor => dataset !== null);
 }

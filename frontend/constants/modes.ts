@@ -1,9 +1,9 @@
 // 這個檔案專門集中管理載具模式的代碼、名稱和顏色。
 export const MODE_DEFINITIONS = [
-  {code: 1, label: 'Walk', color: '#1CC5F8'},
-  {code: 2, label: 'Car', color: '#FFB11B'},
-  {code: 8, label: 'Bus', color: '#6F3381'},
-  {code: 16, label: 'Rail', color: '#CB1B45'},
+  {code: 1, label: 'Walk', color: '#1CC5F8', tripColor: '#5EDBFF'},
+  {code: 2, label: 'Car', color: '#FFB11B', tripColor: '#FFD15C'},
+  {code: 8, label: 'Bus', color: '#6F3381', tripColor: '#A06BC1'},
+  {code: 16, label: 'Rail', color: '#CB1B45', tripColor: '#F45C80'},
 ] as const;
 
 export type ModeCode = (typeof MODE_DEFINITIONS)[number]['code'];
@@ -45,5 +45,14 @@ export function buildModeColorRange() {
     type: 'custom',
     category: 'Custom',
     colors: MODE_DEFINITIONS.map((mode) => mode.color),
+  };
+}
+
+export function buildTripModeColorRange() {
+  return {
+    name: 'MOI Mobility Trips',
+    type: 'custom',
+    category: 'Custom',
+    colors: MODE_DEFINITIONS.map((mode) => mode.tripColor),
   };
 }

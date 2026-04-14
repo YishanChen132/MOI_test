@@ -25,13 +25,13 @@ describe('scenario controller helpers', () => {
   });
 
   it('clamps invalid time ranges to a safe ascending window', () => {
-    expect(clampTimeRange([20_000_000, 19_000_000])).toEqual([19_200_000, 19_800_000]);
-    expect(clampTimeRange([-50, 86_999_000])).toEqual([19_200_000, 19_800_000]);
+    expect(clampTimeRange([20_000_000, 19_000_000])).toEqual([19_740_000, 19_800_000]);
+    expect(clampTimeRange([-50, 86_999_000])).toEqual([9_000_000, 19_800_000]);
   });
 
-  it('always preserves a 10-minute playback window', () => {
-    expect(clampTimeRange([9_000_000, 12_000_000])).toEqual([11_400_000, 12_000_000]);
-    expect(clampTimeRange([9_500_000, 9_700_000])).toEqual([9_500_000, 10_100_000]);
+  it('keeps wider user-selected windows instead of snapping back to the default 10 minutes', () => {
+    expect(clampTimeRange([9_000_000, 12_000_000])).toEqual([9_000_000, 12_000_000]);
+    expect(clampTimeRange([9_500_000, 9_700_000])).toEqual([9_500_000, 9_700_000]);
   });
 
   it('only refreshes the trip source when trips/heatmap inputs change', () => {
