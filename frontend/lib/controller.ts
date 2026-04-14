@@ -1,6 +1,6 @@
 // 這個檔案負責管理場景狀態，像是時間範圍、模式切換和刷新判斷。
-import {DEFAULT_DATASET_PRESET_ID} from './datasets';
-import {ALL_MODE_CODES, formatModeList, type ModeCode} from './modes';
+import {DEFAULT_DATASET_PRESET_ID} from '../constants/datasets';
+import {ALL_MODE_CODES, formatModeList, type ModeCode} from '../constants/modes';
 import {getInitialPlaybackRange, PLAYBACK_DOMAIN, PLAYBACK_WINDOW_MS} from './timeplayback';
 import type {
   AppliedScenario,
@@ -10,7 +10,7 @@ import type {
   LayerVisibility,
   ScenarioConfig,
   TimeRangeMilliseconds,
-} from './types';
+} from '../types';
 
 export const DEFAULT_TIME_RANGE: TimeRangeMilliseconds = getInitialPlaybackRange();
 
@@ -36,7 +36,7 @@ export function createAppliedScenario(
 ): AppliedScenario {
   return {
     ...draft,
-    layers: {...DEFAULT_LAYERS},
+    layers: {...draft.layers},
     modes: [...draft.modes],
     timeRange: clampTimeRange(draft.timeRange),
     requestId,

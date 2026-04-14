@@ -1,13 +1,12 @@
-// 這個檔案負責渲染頁面底部的時間播放條，並讓使用者調整實際播放窗與播放位置。
+// 這個檔案就是目前測試版的 Timebar，負責播放、倍速和底部時間窗拖曳。
 import {Button, Card} from '@sqlrooms/ui';
 import {Pause, Play} from 'lucide-react';
 import {useRef} from 'react';
 import {
   formatMillisecondsToClock,
   formatMillisecondsToHourMinute,
-} from '../lib/format';
-import {PLAYBACK_WINDOW_MS} from '../lib/timeplayback';
-import {useRoomStore} from '../store';
+} from '../../lib/format';
+import {useRoomStore} from '../../app/store';
 
 type DragMode = 'seek' | 'window-start' | 'window-end' | null;
 
@@ -15,7 +14,7 @@ function clampPercent(value: number): number {
   return Math.max(0, Math.min(1, value));
 }
 
-export function PlaybackBar() {
+export function Timebar() {
   const viewTimeRange = useRoomStore((state) => state.moi.viewTimeRange);
   const timeRange = useRoomStore((state) => state.moi.applied.timeRange);
   const isPlaying = useRoomStore((state) => state.moi.isPlaying);
@@ -28,6 +27,7 @@ export function PlaybackBar() {
   const trackRef = useRef<HTMLDivElement | null>(null);
   const dragModeRef = useRef<DragMode>(null);
 
+  // 這幾個不是寫死的 magic number，而是把目前時間窗換成播放條上的百分比位置。
   const domainSpan = viewTimeRange[1] - viewTimeRange[0];
   const windowLeftPercent = ((timeRange[0] - viewTimeRange[0]) / domainSpan) * 100;
   const windowWidthPercent = ((timeRange[1] - timeRange[0]) / domainSpan) * 100;
@@ -200,7 +200,6 @@ export function PlaybackBar() {
 
       <div className="moi-playback-boundary-row">
         <span>Start {formatMillisecondsToClock(viewTimeRange[0])}</span>
-        <span>Default {Math.round(PLAYBACK_WINDOW_MS / 60_000)} min</span>
         <span>End {formatMillisecondsToClock(viewTimeRange[1])}</span>
       </div>
     </Card>

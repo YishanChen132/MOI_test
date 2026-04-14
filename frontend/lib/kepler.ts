@@ -4,10 +4,24 @@ import {
   setFilter,
   updateFilterAnimationSpeed,
 } from '@kepler.gl/actions';
-import {processGeojson, processRowObject} from '@kepler.gl/processors';
+import {processRowObject} from '@kepler.gl/processors';
 import type {KeplerSliceState} from '@sqlrooms/kepler';
 import type {StoreApi} from 'zustand';
-import {buildModeColorRange} from './modes';
+import {
+  ARC_DATASET_ID,
+  ARC_TIME_FILTER_ID,
+  ARC_TOOLTIP_FIELDS,
+  buildArcDataset,
+  buildArcLayerConfig,
+  buildArcTimeFilter,
+} from '../components/layers/odArcLayer/arcKepler';
+import {
+  buildTripDataset,
+  buildTripLayerConfig,
+  TRIP_DATASET_ID,
+  TRIP_TOOLTIP_FIELDS,
+} from '../components/layers/tripsLayer/tripKepler';
+import {buildModeColorRange} from '../constants/modes';
 import {
   millisecondsOfDayToPlaybackEpochMs,
   PLAYBACK_DOMAIN,
@@ -19,19 +33,29 @@ import type {
   AppliedScenario,
   ArcDatum,
   HeatmapDatum,
+  LayerOpacity,
   TimeRangeMilliseconds,
   TripFeatureCollection,
-} from './types';
+} from '../types';
 
 const MODE_COLOR_RANGE = buildModeColorRange();
+const DEFAULT_MAP_STATE = {
+  bearing: 18,
+  dragRotate: true,
+  latitude: 25.111019220248266,
+  longitude: 121.4945181576129,
+  pitch: 44,
+  zoom: 10.6078,
+  isSplit: false,
+};
 
 export const MAP_DATASET_IDS = {
-  trips: 'moi_trip_segments',
-  arc: 'moi_arc_segments',
+  trips: TRIP_DATASET_ID,
+  arc: ARC_DATASET_ID,
   heatmap: 'moi_heatmap_points',
 } as const;
 
-type DatasetDescriptor = {
+export type DatasetDescriptor = {
   id: string;
   label: string;
   processed: unknown;
@@ -39,170 +63,85 @@ type DatasetDescriptor = {
 
 type RoomStoreWithKepler = StoreApi<KeplerSliceState>;
 
+const HEATMAP_TOOLTIP_FIELDS = [
+  {name: 'agent_id'},
+  {name: 'point_index'},
+  {name: 'mode_label'},
+  {name: 'timestamp'},
+] as const;
+
+export function buildHeatmapDataset(heatmapRows: HeatmapDatum[]): DatasetDescriptor | null {
+  if (heatmapRows.length === 0) {
+    return null;
+  }
+
+  return {
+    id: MAP_DATASET_IDS.heatmap,
+    label: 'Heatmap',
+    processed: processRowObject(heatmapRows),
+  };
+}
+
+function buildHeatmapLayerConfig(isVisible = true) {
+  return {
+    id: 'moi-heatmap-layer',
+    type: 'heatmap',
+    config: {
+      dataId: MAP_DATASET_IDS.heatmap,
+      label: 'Heatmap',
+      color: [203, 27, 69],
+      columns: {
+        lat: 'lat',
+        lng: 'lng',
+      },
+      isVisible,
+      visConfig: {
+        opacity: 0.72,
+        radius: 32,
+        colorRange: MODE_COLOR_RANGE,
+      },
+      hidden: false,
+      textLabel: [],
+    },
+    visualChannels: {
+      weightField: null,
+      weightScale: 'linear',
+    },
+  };
+}
+
 export function buildMapDatasets(
   trips: TripFeatureCollection | null,
   arcRows: ArcDatum[],
   heatmapRows: HeatmapDatum[],
 ): DatasetDescriptor[] {
-  const datasets: DatasetDescriptor[] = [];
-
-  if (trips && trips.features.length > 0) {
-    datasets.push({
-      id: MAP_DATASET_IDS.trips,
-      label: 'Trips',
-      processed: processGeojson(trips),
-    });
-  }
-
-  if (arcRows.length > 0) {
-    datasets.push({
-      id: MAP_DATASET_IDS.arc,
-      label: 'OD Arc',
-      processed: processRowObject(arcRows),
-    });
-  }
-
-  if (heatmapRows.length > 0) {
-    datasets.push({
-      id: MAP_DATASET_IDS.heatmap,
-      label: 'Heatmap',
-      processed: processRowObject(heatmapRows),
-    });
-  }
-
-  return datasets;
+  return [buildTripDataset(trips), buildArcDataset(arcRows), buildHeatmapDataset(heatmapRows)].filter(
+    (dataset): dataset is DatasetDescriptor => dataset !== null,
+  );
 }
 
-export function buildKeplerMapConfig(applied: AppliedScenario, datasetIds: readonly string[]) {
+export function buildKeplerMapConfig(
+  applied: AppliedScenario,
+  datasetIds: readonly string[],
+  layerOpacity: LayerOpacity,
+  currentMapState?: Partial<typeof DEFAULT_MAP_STATE>,
+) {
   const layers = [];
   const filters = [];
   const playbackDomainMs = PLAYBACK_DOMAIN.map(millisecondsOfDayToPlaybackEpochMs) as [number, number];
   const playbackValueMs = applied.timeRange.map(millisecondsOfDayToPlaybackEpochMs) as [number, number];
 
-  if (datasetIds.includes(MAP_DATASET_IDS.trips)) {
-    layers.push({
-      id: 'moi-trip-layer',
-      type: 'trip',
-      config: {
-        dataId: MAP_DATASET_IDS.trips,
-        label: 'Trips',
-        color: [255, 177, 27],
-        columns: {
-          geojson: '_geojson',
-        },
-        isVisible: true,
-        visConfig: {
-          opacity: 0.85,
-          thickness: 0.8,
-          colorRange: MODE_COLOR_RANGE,
-          trailLength: 45,
-          fadeTrail: true,
-          billboard: false,
-          sizeRange: [0, 8],
-        },
-        hidden: false,
-        textLabel: [],
-      },
-      visualChannels: {
-        colorField: {
-          name: 'mode_label',
-          type: 'string',
-        },
-        colorScale: 'ordinal',
-        sizeField: null,
-        sizeScale: 'linear',
-      },
-    });
+  if (datasetIds.includes(TRIP_DATASET_ID)) {
+    layers.push(buildTripLayerConfig(applied.layers.trips, layerOpacity.trips));
   }
 
-  if (datasetIds.includes(MAP_DATASET_IDS.arc)) {
-    layers.push({
-      id: 'moi-arc-layer',
-      type: 'arc',
-      config: {
-        dataId: MAP_DATASET_IDS.arc,
-        label: 'OD Arc',
-        color: [255, 177, 27],
-        colorField: {
-          name: 'mode_label',
-          type: 'string',
-        },
-        colorScale: 'ordinal',
-        columns: {
-          lat0: 'source_lat',
-          lng0: 'source_lng',
-          lat1: 'target_lat',
-          lng1: 'target_lng',
-        },
-        isVisible: true,
-        visConfig: {
-          opacity: 0.8,
-          thickness: 3,
-          colorRange: MODE_COLOR_RANGE,
-          sizeRange: [0, 6],
-          targetColor: [255, 255, 255],
-        },
-        hidden: false,
-        textLabel: [],
-      },
-      visualChannels: {
-        colorField: {
-          name: 'mode_label',
-          type: 'string',
-        },
-        colorScale: 'ordinal',
-        sizeField: null,
-        sizeScale: 'linear',
-      },
-    });
-
-    filters.push({
-      id: 'moi-arc-time-filter',
-      dataId: MAP_DATASET_IDS.arc,
-      name: 'timestamp_ms',
-      type: 'timeRange',
-      view: 'enlarged',
-      enabled: true,
-      fixedDomain: true,
-      isAnimating: false,
-      domain: playbackDomainMs,
-      value: playbackValueMs,
-      plotType: 'histogram',
-      animationWindow: 'free',
-      speed: PLAYBACK_INITIAL_SPEED,
-      timeFormat: PLAYBACK_TIME_FORMAT,
-      defaultTimeFormat: PLAYBACK_TIME_FORMAT,
-      timezone: PLAYBACK_TIMEZONE,
-      step: 60_000,
-    });
+  if (datasetIds.includes(ARC_DATASET_ID)) {
+    layers.push(buildArcLayerConfig(applied.layers.arc, layerOpacity.arc));
+    filters.push(buildArcTimeFilter(playbackDomainMs, playbackValueMs));
   }
 
   if (datasetIds.includes(MAP_DATASET_IDS.heatmap)) {
-    layers.push({
-      id: 'moi-heatmap-layer',
-      type: 'heatmap',
-      config: {
-        dataId: MAP_DATASET_IDS.heatmap,
-        label: 'Heatmap',
-        color: [203, 27, 69],
-        columns: {
-          lat: 'lat',
-          lng: 'lng',
-        },
-        isVisible: true,
-        visConfig: {
-          opacity: 0.72,
-          radius: 32,
-          colorRange: MODE_COLOR_RANGE,
-        },
-        hidden: false,
-        textLabel: [],
-      },
-      visualChannels: {
-        weightField: null,
-        weightScale: 'linear',
-      },
-    });
+    layers.push(buildHeatmapLayerConfig(applied.layers.heatmap));
   }
 
   return {
@@ -215,25 +154,9 @@ export function buildKeplerMapConfig(applied: AppliedScenario, datasetIds: reado
           tooltip: {
             enabled: true,
             fieldsToShow: {
-              [MAP_DATASET_IDS.trips]: [
-                {name: 'agent_id'},
-                {name: 'segment_index'},
-                {name: 'mode_label'},
-                {name: 'start_time'},
-                {name: 'end_time'},
-              ],
-              [MAP_DATASET_IDS.arc]: [
-                {name: 'agent_id'},
-                {name: 'segment_index'},
-                {name: 'mode_label'},
-                {name: 'timestamp'},
-              ],
-              [MAP_DATASET_IDS.heatmap]: [
-                {name: 'agent_id'},
-                {name: 'point_index'},
-                {name: 'mode_label'},
-                {name: 'timestamp'},
-              ],
+              [TRIP_DATASET_ID]: TRIP_TOOLTIP_FIELDS,
+              [ARC_DATASET_ID]: ARC_TOOLTIP_FIELDS,
+              [MAP_DATASET_IDS.heatmap]: HEATMAP_TOOLTIP_FIELDS,
             },
             compareMode: false,
             compareType: 'absolute',
@@ -251,13 +174,8 @@ export function buildKeplerMapConfig(applied: AppliedScenario, datasetIds: reado
         },
       },
       mapState: {
-        bearing: 18,
-        dragRotate: true,
-        latitude: 25.111019220248266,
-        longitude: 121.4945181576129,
-        pitch: 44,
-        zoom: 10.6078,
-        isSplit: false,
+        ...DEFAULT_MAP_STATE,
+        ...currentMapState,
       },
       mapStyle: {
         styleType: 'dark-matter',
@@ -282,36 +200,45 @@ export function replaceMapDatasets(
   mapId: string,
   applied: AppliedScenario,
   datasets: DatasetDescriptor[],
+  layerOpacity: LayerOpacity,
 ): void {
   const state = roomStore.getState();
   const datasetIds = datasets.map((dataset) => dataset.id);
-
-  for (const datasetId of Object.values(MAP_DATASET_IDS)) {
-    state.kepler.removeDatasetFromMaps(datasetId);
-  }
+  const currentMap = state.kepler.map[mapId];
+  const currentDatasetIds = Object.keys(currentMap?.visState.datasets ?? {}).filter((datasetId) => {
+    return Object.values(MAP_DATASET_IDS).includes(datasetId as (typeof MAP_DATASET_IDS)[keyof typeof MAP_DATASET_IDS]);
+  });
 
   const addDataToMap = (state.kepler as KeplerSliceState['kepler'] & {
     addDataToMap: (targetMapId: string, payload: unknown) => void;
   }).addDataToMap;
 
-  addDataToMap(mapId, {
-    datasets: datasets.map((dataset) => ({
-      info: {
-        label: dataset.label,
-        id: dataset.id,
+  for (const datasetId of currentDatasetIds) {
+    if (!datasetIds.includes(datasetId)) {
+      state.kepler.removeDatasetFromMaps(datasetId);
+    }
+  }
+
+  if (datasets.length > 0) {
+    addDataToMap(mapId, {
+      datasets: datasets.map((dataset) => ({
+        info: {
+          label: dataset.label,
+          id: dataset.id,
+        },
+        data: dataset.processed,
+      })),
+      options: {
+        autoCreateLayers: false,
+        centerMap: currentDatasetIds.length === 0 && applied.requestId === 1,
+        keepExistingConfig: true,
       },
-      data: dataset.processed,
-    })),
-    options: {
-      autoCreateLayers: false,
-      centerMap: applied.requestId === 1,
-      keepExistingConfig: false,
-    },
-  });
+    });
+  }
 
   state.kepler.addConfigToMap(
     mapId,
-    buildKeplerMapConfig(applied, datasetIds) as never,
+    buildKeplerMapConfig(applied, datasetIds, layerOpacity, currentMap?.mapState) as never,
   );
 }
 
@@ -323,21 +250,20 @@ export function syncPlaybackWindow(
 ): void {
   const currentMap = roomStore.getState().kepler.map[mapId];
   const filterIndex = currentMap?.visState.filters.findIndex(
-    (filter) => filter.id === 'moi-arc-time-filter',
+    (filter) => filter.id === ARC_TIME_FILTER_ID,
   );
-
-  if (filterIndex == null || filterIndex < 0) {
-    return;
-  }
 
   const playbackDomainMs = PLAYBACK_DOMAIN.map(millisecondsOfDayToPlaybackEpochMs) as [number, number];
   const playbackValueMs = timeRange.map(millisecondsOfDayToPlaybackEpochMs) as [number, number];
 
-  roomStore.getState().kepler.dispatchAction(mapId, setFilter(filterIndex, 'value', playbackValueMs));
-  roomStore.getState().kepler.dispatchAction(
-    mapId,
-    updateFilterAnimationSpeed(filterIndex, timeScale),
-  );
+  if (filterIndex != null && filterIndex >= 0) {
+    roomStore.getState().kepler.dispatchAction(mapId, setFilter(filterIndex, 'value', playbackValueMs));
+    roomStore.getState().kepler.dispatchAction(
+      mapId,
+      updateFilterAnimationSpeed(filterIndex, timeScale),
+    );
+  }
+
   roomStore.getState().kepler.dispatchAction(
     mapId,
     setAnimationConfig({

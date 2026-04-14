@@ -1,22 +1,22 @@
 // 這個檔案是前端畫面的主入口，負責把控制面板和地圖畫面組起來。
 import {RoomShell} from '@sqlrooms/room-shell';
-import {PlaybackBar} from './map/PlaybackBar';
-import {QueryControlPanel} from './map/QueryControlPanel';
-import {KeplerMapView} from './map/KeplerMapView';
-import {roomStore} from './store';
+import {Timebar} from './components/controllor/Timebar';
+import {ControlMenu} from './components/controllor/ControlMenu';
+import {MapLayers} from './components/mapLayers/MapLayers';
+import {roomStore} from './app/store';
 
 export function App() {
   return (
     <RoomShell className="h-dvh w-screen overflow-hidden" roomStore={roomStore}>
       <div className="moi-shell">
         <aside className="moi-panel-column">
-          <QueryControlPanel />
+          <ControlMenu />
         </aside>
         <main className="moi-map-column">
-          <KeplerMapView />
+          <MapLayers />
         </main>
         <footer className="moi-playback-row">
-          <PlaybackBar />
+          <Timebar />
         </footer>
       </div>
     </RoomShell>

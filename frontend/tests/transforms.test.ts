@@ -1,11 +1,11 @@
 // 這個檔案負責測試資料轉換是否正確切段、展平和保留時間資訊。
+import {flattenArcRows} from '../components/layers/odArcLayer/arcTransform';
+import {segmentTripRows} from '../components/layers/tripsLayer/tripTransform';
 import {
-  flattenArcRows,
   flattenHeatmapRows,
   normalizeNumericArray,
-  segmentTripRows,
 } from '../lib/transforms';
-import type {QueryTrajectoryRow} from '../lib/types';
+import type {QueryTrajectoryRow} from '../types';
 
 describe('transform helpers', () => {
   it('segments trips by continuous mode within the selected window', () => {
@@ -29,8 +29,8 @@ describe('transform helpers', () => {
       end_time: 10_100,
     });
     expect(geojson.features[0]?.geometry.coordinates).toEqual([
-      [121.5, 25.0, 0, 10_000],
-      [121.51, 25.01, 0, 10_100],
+      [121.5, 25.0, 0, 1_704_077_200_000],
+      [121.51, 25.01, 0, 1_704_077_300_000],
     ]);
     expect(geojson.features[1]?.properties).toMatchObject({
       segment_index: 1,

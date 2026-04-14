@@ -1,7 +1,7 @@
 // 這個檔案負責統一定義播放時間範圍、初始速度和時間格式轉換規則。
-import type {TimeRangeMilliseconds, TimeRangeSeconds} from './types';
+import type {TimeRangeMilliseconds, TimeRangeSeconds} from '../types';
 
-export const PLAYBACK_DOMAIN: TimeRangeMilliseconds = [9_000_000, 21_600_000];
+export const PLAYBACK_DOMAIN: TimeRangeMilliseconds = [9_000_000, 19_800_000];
 export const PLAYBACK_WINDOW_MS = 600_000;
 export const PLAYBACK_INITIAL_SPEED = 30;
 export const PLAYBACK_TIMEZONE = 'UTC';

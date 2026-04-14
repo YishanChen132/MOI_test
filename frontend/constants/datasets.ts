@@ -1,4 +1,4 @@
-// 這個檔案負責定義各資料集 preset 對應到哪些 parquet 檔案與 SQLRooms data source。
+// 這個檔案專門集中管理各資料集 preset，讓前端知道每一批資料對應哪個 parquet 和 table。
 import type {UrlDataSource} from '@sqlrooms/room-config';
 
 const baseUrl = (import.meta.env.VITE_DATA_BASE_URL || 'http://localhost:7780/data').replace(/\/$/, '');

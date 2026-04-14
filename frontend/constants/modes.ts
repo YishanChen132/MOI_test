@@ -1,4 +1,4 @@
-// 這個檔案負責定義目前測試版允許的載具模式、名稱和顏色。
+// 這個檔案專門集中管理載具模式的代碼、名稱和顏色。
 export const MODE_DEFINITIONS = [
   {code: 1, label: 'Walk', color: '#1CC5F8'},
   {code: 2, label: 'Car', color: '#FFB11B'},
@@ -9,6 +9,7 @@ export const MODE_DEFINITIONS = [
 export type ModeCode = (typeof MODE_DEFINITIONS)[number]['code'];
 
 export const ALL_MODE_CODES = MODE_DEFINITIONS.map((mode) => mode.code) as ModeCode[];
+export const ALL_MODE_LABELS = MODE_DEFINITIONS.map((mode) => mode.label);
 
 export const MODE_LABEL_BY_CODE = new Map<ModeCode, string>(
   MODE_DEFINITIONS.map((mode) => [mode.code, mode.label]),

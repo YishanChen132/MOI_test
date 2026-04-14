@@ -119,6 +119,54 @@ body {
   transform: translateY(-1px);
 }
 
+.moi-layer-control-row {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  border: 1px solid rgb(255 255 255 / 0.08);
+  border-radius: 0.95rem;
+  background: rgb(255 255 255 / 0.04);
+  padding: 0.85rem;
+}
+
+.moi-layer-toggle {
+  display: inline-flex;
+  min-width: 4.75rem;
+  align-items: center;
+  gap: 0.625rem;
+}
+
+.moi-layer-slider {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.moi-layer-slider > span:first-child {
+  height: 0.6rem;
+  border: 1px solid rgb(255 255 255 / 0.12);
+  background: rgb(255 255 255 / 0.16);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.04);
+}
+
+.moi-layer-slider > span:first-child > span {
+  background: linear-gradient(90deg, rgb(56 189 248 / 0.95), rgb(37 99 235 / 0.95));
+}
+
+.moi-layer-slider > span:last-child {
+  width: 1rem;
+  height: 1rem;
+  border-color: transparent;
+  background: rgb(248 250 252);
+  box-shadow: 0 8px 16px rgb(15 23 42 / 0.28);
+}
+
+.moi-layer-opacity-value {
+  min-width: 3rem;
+  text-align: right;
+  color: rgb(226 232 240);
+  font-size: 0.9rem;
+}
+
 .kepler-gl,
 .mapboxgl-map,
 .maplibregl-map,
@@ -295,6 +343,20 @@ body {
   .moi-playback-boundary-row {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .moi-layer-control-row {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .moi-layer-toggle {
+    min-width: 0;
+  }
+
+  .moi-layer-slider {
+    width: 100%;
+    flex-basis: 100%;
   }
 
   .moi-playback-readout {

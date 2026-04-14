@@ -13,9 +13,13 @@ import {
   clampTimeRange as clampScenarioTimeRange,
   computeScenarioRefreshTargets as computeScenarioTargets,
   scenarioEquals as scenarioConfigEquals,
-} from './lib/controller';
-import {DEFAULT_DATASET_PRESET_ID, getPresetRoomDataSources, type DatasetPresetId} from './lib/datasets';
-import type {ModeCode} from './lib/modes';
+} from '../lib/controller';
+import {
+  DEFAULT_DATASET_PRESET_ID,
+  getPresetRoomDataSources,
+  type DatasetPresetId,
+} from '../constants/datasets';
+import type {ModeCode} from '../constants/modes';
 import {
   clampDisplayRange,
   derivePlaybackRange,
@@ -24,15 +28,17 @@ import {
   PLAYBACK_DOMAIN,
   PLAYBACK_INITIAL_SPEED,
   PLAYBACK_WINDOW_MS,
-} from './lib/timeplayback';
+} from '../lib/timeplayback';
 import type {
   AppliedScenario,
+  AdjustableLayerId,
   BenchmarkCounts,
   BenchmarkEntry,
   LayerId,
+  LayerOpacity,
   ScenarioConfig,
   TimeRangeMilliseconds,
-} from './lib/types';
+} from '../types';
 
 type MoiSliceState = {
   moi: {
@@ -44,6 +50,7 @@ type MoiSliceState = {
     benchmarks: BenchmarkEntry[];
     lastError: string | null;
     lastCounts: BenchmarkCounts;
+    layerOpacity: LayerOpacity;
     isPlaying: boolean;
     tickStartTimestamp: number | null;
     accumulatedAmount: number;
@@ -53,6 +60,7 @@ type MoiSliceState = {
     setDatasetPreset: (datasetId: DatasetPresetId) => void;
     setLayerEnabled: (layerId: LayerId, enabled: boolean) => void;
     setModeEnabled: (mode: ModeCode, enabled: boolean) => void;
+    setLayerOpacity: (layerId: AdjustableLayerId, opacity: number) => void;
     startPlayback: () => void;
     pausePlayback: () => void;
     tickPlayback: (now?: number) => void;
@@ -81,6 +89,11 @@ const initialCounts: BenchmarkCounts = {
   tripSegments: 0,
   arcRows: 0,
   heatmapPoints: 0,
+};
+
+const DEFAULT_LAYER_OPACITY: LayerOpacity = {
+  trips: 0.7,
+  arc: 0.75,
 };
 
 const MIN_ACTIVE_WINDOW_MS = 60_000;
@@ -154,6 +167,7 @@ export const {roomStore, useRoomStore} = createRoomStore<RoomState>((set, get, s
     benchmarks: [],
     lastError: null,
     lastCounts: initialCounts,
+    layerOpacity: DEFAULT_LAYER_OPACITY,
     isPlaying: false,
     tickStartTimestamp: null,
     accumulatedAmount: getInitialAccumulatedAmount(),
@@ -178,7 +192,10 @@ export const {roomStore, useRoomStore} = createRoomStore<RoomState>((set, get, s
           ...state.moi,
           draft: {
             ...state.moi.draft,
-            layers: {...DEFAULT_LAYERS},
+            layers: {
+              ...state.moi.draft.layers,
+              [layerId]: enabled,
+            },
           },
         },
       }));
@@ -195,6 +212,17 @@ export const {roomStore, useRoomStore} = createRoomStore<RoomState>((set, get, s
         },
       }));
       get().moi.applyDraft();
+    },
+    setLayerOpacity: (layerId, opacity) => {
+      set((state) => ({
+        moi: {
+          ...state.moi,
+          layerOpacity: {
+            ...state.moi.layerOpacity,
+            [layerId]: Math.max(0.02, Math.min(1, opacity)),
+          },
+        },
+      }));
     },
     startPlayback: () => {
       set((state) => {

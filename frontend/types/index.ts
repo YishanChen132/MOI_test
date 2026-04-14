@@ -1,10 +1,12 @@
 // 這個檔案負責集中定義 MOI_test 前端會共用到的型別。
-import type {DatasetPresetId} from './datasets';
-import type {ModeCode} from './modes';
+import type {DatasetPresetId} from '../constants/datasets';
+import type {ModeCode} from '../constants/modes';
 
 export type LayerId = 'trips' | 'arc' | 'heatmap';
+export type AdjustableLayerId = 'trips' | 'arc';
 
 export type LayerVisibility = Record<LayerId, boolean>;
+export type LayerOpacity = Record<AdjustableLayerId, number>;
 
 export type TimeRangeMilliseconds = [number, number];
 export type TimeRangeSeconds = [number, number];

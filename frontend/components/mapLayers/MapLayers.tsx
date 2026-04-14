@@ -1,11 +1,11 @@
-// 這個檔案負責組合 kepler 地圖本體和拆開後的資料同步、播放、狀態顯示元件。
+// 這個檔案就是目前地圖主畫面，負責把 kepler 地圖、資料同步和播放循環組起來。
 import {KeplerMapContainer} from '@sqlrooms/kepler';
 import {Card} from '@sqlrooms/ui';
 import {PlaybackLoop} from './PlaybackLoop';
 import {ScenarioDataSync} from './ScenarioDataSync';
-import {useRoomStore} from '../store';
+import {useRoomStore} from '../../app/store';
 
-export function KeplerMapView() {
+export function MapLayers() {
   const currentMapId = useRoomStore((state) => state.kepler.config.currentMapId);
 
   if (!currentMapId) {

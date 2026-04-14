@@ -25,8 +25,8 @@ describe('scenario controller helpers', () => {
   });
 
   it('clamps invalid time ranges to a safe ascending window', () => {
-    expect(clampTimeRange([20_000_000, 19_000_000])).toEqual([20_000_000, 20_600_000]);
-    expect(clampTimeRange([-50, 86_999_000])).toEqual([21_000_000, 21_600_000]);
+    expect(clampTimeRange([20_000_000, 19_000_000])).toEqual([19_200_000, 19_800_000]);
+    expect(clampTimeRange([-50, 86_999_000])).toEqual([19_200_000, 19_800_000]);
   });
 
   it('always preserves a 10-minute playback window', () => {
@@ -77,6 +77,28 @@ describe('scenario controller helpers', () => {
     expect(second.requestId).toBeGreaterThan(first.requestId);
     expect(isCurrentRequest(second.requestId, first.requestId)).toBe(false);
     expect(isCurrentRequest(second.requestId, second.requestId)).toBe(true);
+  });
+
+  it('preserves layer toggles when creating an applied scenario', () => {
+    const scenario = createInitialScenario();
+    const applied = createAppliedScenario(
+      {
+        ...scenario,
+        layers: {
+          ...scenario.layers,
+          trips: true,
+          arc: false,
+        },
+      },
+      5,
+      120,
+    );
+
+    expect(applied.layers).toEqual({
+      trips: true,
+      arc: false,
+      heatmap: false,
+    });
   });
 
   it('preserves sorted mode selection order and compares scenarios structurally', () => {
