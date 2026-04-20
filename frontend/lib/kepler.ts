@@ -118,7 +118,7 @@ export function buildKeplerMapConfig(
           road: true,
           border: false,
           building: true,
-          water: true,
+          water: false,
           land: true,
           '3d building': true,
         },

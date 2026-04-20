@@ -22,8 +22,8 @@ function sliderValueToOpacity(value: number): number {
   return Math.pow(normalized, 1.6);
 }
 
-function countEnabledLayers(layers: {trips: boolean; arc: boolean; heatmap: boolean}): number {
-  return [layers.trips, layers.arc, layers.heatmap].filter(Boolean).length;
+function countEnabledLayers(layers: {trips: boolean; arc: boolean; heatmap: boolean; boundary: boolean}): number {
+  return [layers.trips, layers.arc, layers.heatmap, layers.boundary].filter(Boolean).length;
 }
 
 export function ControlMenu() {
@@ -72,6 +72,25 @@ export function ControlMenu() {
               </Badge>
             </div>
             <div className="space-y-2">
+              <div className="moi-layer-control-row">
+                <label className="moi-layer-toggle">
+                  <Checkbox
+                    checked={draft.layers.boundary}
+                    onCheckedChange={(checked) => setLayerEnabled('boundary', checked === true)}
+                  />
+                  <span>Boundary</span>
+                </label>
+                <Slider
+                  className="moi-layer-slider"
+                  disabled={!draft.layers.boundary}
+                  max={100}
+                  min={0}
+                  step={1}
+                  value={[opacityToSliderValue(layerOpacity.boundary)]}
+                  onValueChange={(value) => setLayerOpacity('boundary', sliderValueToOpacity(value[0] ?? 0))}
+                />
+                <strong className="moi-layer-opacity-value">{Math.round(layerOpacity.boundary * 100)}%</strong>
+              </div>
               <div className="moi-layer-control-row">
                 <label className="moi-layer-toggle">
                   <Checkbox

@@ -19,6 +19,7 @@ export const DEFAULT_LAYERS: LayerVisibility = {
   trips: false,
   arc: true,
   heatmap: false,
+  boundary: true,
 };
 
 export function createInitialScenario(): ScenarioConfig {
@@ -90,7 +91,8 @@ export function scenarioEquals(
     left.modes.every((mode, index) => mode === right.modes[index]) &&
     left.layers.trips === right.layers.trips &&
     left.layers.arc === right.layers.arc &&
-    left.layers.heatmap === right.layers.heatmap
+    left.layers.heatmap === right.layers.heatmap &&
+    left.layers.boundary === right.layers.boundary
   );
 }
 
@@ -100,7 +102,8 @@ export function summarizeLayers(layers: LayerVisibility): string {
     .map(([layer]) => {
       if (layer === 'trips') return 'Trips';
       if (layer === 'arc') return 'Arc';
-      return 'Heatmap';
+      if (layer === 'heatmap') return 'Heatmap';
+      return 'Boundary';
     });
 
   return enabled.length ? enabled.join(' + ') : 'No layers';

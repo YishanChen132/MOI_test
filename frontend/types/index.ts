@@ -2,8 +2,8 @@
 import type {DatasetPresetId} from '../constants/datasets';
 import type {ModeCode} from '../constants/modes';
 
-export type LayerId = 'trips' | 'arc' | 'heatmap';
-export type AdjustableLayerId = 'trips' | 'arc' | 'heatmap';
+export type LayerId = 'trips' | 'arc' | 'heatmap' | 'boundary';
+export type AdjustableLayerId = 'trips' | 'arc' | 'heatmap' | 'boundary';
 
 export type LayerVisibility = Record<LayerId, boolean>;
 export type LayerOpacity = Record<AdjustableLayerId, number>;

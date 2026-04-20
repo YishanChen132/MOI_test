@@ -5,6 +5,7 @@ import {PlaybackLoop} from './PlaybackLoop';
 import {ScenarioDataSync} from './ScenarioDataSync';
 import {KeplerMapContainer} from './KeplerMapContainer';
 import {useHeatmapCustomLayers} from '../layers/heatmapLayer/useHeatmapCustomLayers';
+import {useBoundaryCustomLayers} from '../layers/boundaryLayer/useBoundaryCustomLayers';
 import {useRoomStore} from '../../app/store';
 import type {
   ArcCacheEntry,
@@ -16,6 +17,8 @@ export function MapLayers() {
   const tripCacheRef = useRef(new Map<string, TripCacheEntry>());
   const arcCacheRef = useRef(new Map<string, ArcCacheEntry>());
   const {layers: heatmapCustomLayers} = useHeatmapCustomLayers(tripCacheRef);
+  const {layers: boundaryCustomLayers} = useBoundaryCustomLayers();
+  const customLayers = [...boundaryCustomLayers, ...heatmapCustomLayers];
 
   if (!currentMapId) {
     return (
@@ -32,7 +35,7 @@ export function MapLayers() {
 
       <div className="relative min-h-0 flex-1">
         <div className="absolute inset-0">
-          <KeplerMapContainer customLayers={heatmapCustomLayers} mapId={currentMapId} />
+          <KeplerMapContainer customLayers={customLayers} mapId={currentMapId} />
         </div>
       </div>
     </div>

@@ -95,6 +95,7 @@ const DEFAULT_LAYER_OPACITY: LayerOpacity = {
   heatmap: 0.55,
   trips: 0.7,
   arc: 0.75,
+  boundary: 0.9,
 };
 
 const MIN_ACTIVE_WINDOW_MS = 60_000;
