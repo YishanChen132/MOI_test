@@ -1,12 +1,21 @@
-// 這個檔案就是目前地圖主畫面，負責把 kepler 地圖、資料同步和播放循環組起來。
-import {KeplerMapContainer} from '@sqlrooms/kepler';
+// 這個檔案就是目前地圖主畫面，負責把 kepler 地圖、資料同步、heatmap customLayers 和播放循環組起來。
 import {Card} from '@sqlrooms/ui';
+import {useRef} from 'react';
 import {PlaybackLoop} from './PlaybackLoop';
 import {ScenarioDataSync} from './ScenarioDataSync';
+import {KeplerMapContainer} from './KeplerMapContainer';
+import {useHeatmapCustomLayers} from '../layers/heatmapLayer/useHeatmapCustomLayers';
 import {useRoomStore} from '../../app/store';
+import type {
+  ArcCacheEntry,
+  TripCacheEntry,
+} from './scenario/scenarioDataSyncHelpers';
 
 export function MapLayers() {
   const currentMapId = useRoomStore((state) => state.kepler.config.currentMapId);
+  const tripCacheRef = useRef(new Map<string, TripCacheEntry>());
+  const arcCacheRef = useRef(new Map<string, ArcCacheEntry>());
+  const {layers: heatmapCustomLayers} = useHeatmapCustomLayers(tripCacheRef);
 
   if (!currentMapId) {
     return (
@@ -18,12 +27,12 @@ export function MapLayers() {
 
   return (
     <div className="relative flex h-full flex-col overflow-hidden rounded-[28px] border border-border/70 bg-card/55 shadow-2xl backdrop-blur-md">
-      <ScenarioDataSync mapId={currentMapId} />
+      <ScenarioDataSync arcCacheRef={arcCacheRef} mapId={currentMapId} tripCacheRef={tripCacheRef} />
       <PlaybackLoop mapId={currentMapId} />
 
       <div className="relative min-h-0 flex-1">
         <div className="absolute inset-0">
-          <KeplerMapContainer mapId={currentMapId} />
+          <KeplerMapContainer customLayers={heatmapCustomLayers} mapId={currentMapId} />
         </div>
       </div>
     </div>

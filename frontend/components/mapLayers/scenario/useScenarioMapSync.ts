@@ -1,15 +1,12 @@
-// 這個檔案負責把查回來的資料轉成 kepler dataset，並在圖層或透明度改變時同步更新地圖。
+// 這個檔案負責把查回來的資料轉成 kepler dataset，並把 Trip 原始 rows 留給 heatmap deck 圖層共用。
+import type * as arrow from 'apache-arrow';
 import {useEffect, useRef, type MutableRefObject} from 'react';
 import {buildArcDatasets} from '../../layers/odArcLayer/arcKepler';
 import {flattenArcRows} from '../../layers/odArcLayer/arcTransform';
 import {buildTripDatasets} from '../../layers/tripsLayer/tripKepler';
 import {segmentTripRows} from '../../layers/tripsLayer/tripTransform';
-import {
-  buildHeatmapDataset,
-  replaceMapDatasets,
-} from '../../../lib/kepler';
+import {replaceMapDatasets} from '../../../lib/kepler';
 import {millisecondsRangeToSeconds, PLAYBACK_DOMAIN} from '../../../lib/timeplayback';
-import {flattenHeatmapRows} from '../../../lib/transforms';
 import type {
   AppliedScenario,
   BenchmarkCounts,
@@ -26,7 +23,7 @@ import {
 } from './scenarioDataSyncHelpers';
 
 type TrajectoryQueryResult = {
-  data?: {rows: () => Iterable<QueryTrajectoryRow>} | null;
+  data?: {rows: () => Iterable<QueryTrajectoryRow>; arrowTable: arrow.Table} | null;
   error?: Error | null;
   isLoading: boolean;
 };
@@ -131,15 +128,17 @@ export function useScenarioMapSync({
     let nextArcEntry = cachedArcEntry;
 
     if (!nextTripEntry && tripResult.data) {
-      const tripRows = tripResult.data.rows();
-      const tripFeatures = segmentTripRows(tripRows, applied.modes, playbackRangeSeconds);
-      const heatmapRows = flattenHeatmapRows(tripRows, applied.modes, playbackRangeSeconds);
+      const tripRows = Array.from(tripResult.data.rows());
+      const tripFeatures = applied.layers.trips
+        ? segmentTripRows(tripRows, applied.modes, playbackRangeSeconds)
+        : null;
 
       nextTripEntry = {
+        arrowTable: tripResult.data.arrowTable ?? null,
+        trajectoryRows: tripRows,
         tripDatasets: buildTripDatasets(tripFeatures),
-        heatmapDataset: buildHeatmapDataset(heatmapRows),
-        tripSegments: tripFeatures.features.length,
-        heatmapPoints: heatmapRows.length,
+        tripSegments: tripFeatures?.features.length ?? 0,
+        heatmapPoints: applied.layers.heatmap ? tripRows.length : 0,
       };
       tripCacheRef.current.set(scenarioCacheKey, nextTripEntry);
     }

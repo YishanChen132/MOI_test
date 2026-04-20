@@ -1,6 +1,6 @@
 // 這個檔案負責把資料同步流程串起來，讓地圖知道現在該查什麼、該顯示什麼。
 import {useSql} from '@sqlrooms/duckdb';
-import {useMemo, useRef} from 'react';
+import {useMemo, type MutableRefObject} from 'react';
 import {buildArcSourceQuery} from '../layers/odArcLayer/arcSql';
 import {buildTripSourceQuery} from '../layers/tripsLayer/tripSql';
 import {getPresetRoomDataSources} from '../../constants/datasets';
@@ -17,15 +17,19 @@ import {useScenarioSourceSync} from './scenario/useScenarioSourceSync';
 
 type ScenarioDataSyncProps = {
   mapId: string;
+  tripCacheRef: MutableRefObject<Map<string, TripCacheEntry>>;
+  arcCacheRef: MutableRefObject<Map<string, ArcCacheEntry>>;
 };
 
-export function ScenarioDataSync({mapId}: ScenarioDataSyncProps) {
+export function ScenarioDataSync({
+  mapId,
+  tripCacheRef,
+  arcCacheRef,
+}: ScenarioDataSyncProps) {
   const applied = useRoomStore((state) => state.moi.applied);
   const completeRun = useRoomStore((state) => state.moi.completeRun);
   const layerOpacity = useRoomStore((state) => state.moi.layerOpacity);
   const roomInitialized = useRoomStore((state) => state.room.initialized);
-  const tripCacheRef = useRef(new Map<string, TripCacheEntry>());
-  const arcCacheRef = useRef(new Map<string, ArcCacheEntry>());
 
   const needsTripSource = applied.layers.trips || applied.layers.heatmap;
   const needsArcSource = applied.layers.arc;
