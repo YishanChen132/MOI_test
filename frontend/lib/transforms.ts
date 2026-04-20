@@ -1,5 +1,6 @@
 // 這個檔案放軌跡資料轉換會共用到的小工具，以及 Heatmap 專用的轉換函式。
 import {toModeLabel} from '../constants/modes';
+import {secondsOfDayToPlaybackMs} from './timeplayback';
 import type {
   HeatmapDatum,
   QueryTrajectoryRow,
@@ -64,12 +65,15 @@ export function flattenHeatmapRows(
 
       result.push({
         agent_id: row.agent_id,
-        point_index: pointIndex,
+        segment_index: pointIndex,
+        sample_index: 0,
         lng,
         lat,
         mode,
         mode_label: toModeLabel(mode),
         timestamp,
+        timestamp_ms: secondsOfDayToPlaybackMs(timestamp),
+        weight: 1,
       });
     }
   }

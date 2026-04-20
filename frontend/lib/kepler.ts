@@ -1,28 +1,24 @@
-// 這個檔案負責把查詢後的資料和 kepler.gl 的圖層、時間設定接在一起。
+// 這個檔案負責把查詢後的資料和 kepler.gl 的圖層、時間設定接在一起，heatmap 改由 customLayers 顯示。
 import {
   setAnimationConfig,
   setFilter,
 } from '@kepler.gl/actions';
-import {processRowObject} from '@kepler.gl/processors';
 import type {KeplerSliceState} from '@sqlrooms/kepler';
 import type {StoreApi} from 'zustand';
 import {
   ARC_DATASET_IDS,
   ARC_TIME_FILTER_ID,
   ARC_TOOLTIP_FIELDS,
-  buildArcDatasets,
   buildArcLayerConfigs,
   buildArcTimeFilter,
   isArcDatasetId,
 } from '../components/layers/odArcLayer/arcKepler';
 import {
-  buildTripDatasets,
   buildTripLayerConfigs,
   isTripDatasetId,
   TRIP_DATASET_IDS,
   TRIP_TOOLTIP_FIELDS,
 } from '../components/layers/tripsLayer/tripKepler';
-import {buildModeColorRange} from '../constants/modes';
 import {
   millisecondsOfDayToPlaybackEpochMs,
   PLAYBACK_DOMAIN,
@@ -31,14 +27,10 @@ import {
 } from './timeplayback';
 import type {
   AppliedScenario,
-  ArcDatum,
-  HeatmapDatum,
   LayerOpacity,
   TimeRangeMilliseconds,
-  TripFeatureCollection,
 } from '../types';
 
-const MODE_COLOR_RANGE = buildModeColorRange();
 const KEPLER_PASSIVE_SPEED = 1;
 const DEFAULT_MAP_STATE = {
   bearing: 18,
@@ -50,10 +42,6 @@ const DEFAULT_MAP_STATE = {
   isSplit: false,
 };
 
-export const MAP_DATASET_IDS = {
-  heatmap: 'moi_heatmap_points',
-} as const;
-
 export type DatasetDescriptor = {
   id: string;
   label: string;
@@ -61,63 +49,6 @@ export type DatasetDescriptor = {
 };
 
 type RoomStoreWithKepler = StoreApi<KeplerSliceState>;
-
-const HEATMAP_TOOLTIP_FIELDS = [
-  {name: 'agent_id'},
-  {name: 'point_index'},
-  {name: 'mode_label'},
-  {name: 'timestamp'},
-] as const;
-
-export function buildHeatmapDataset(heatmapRows: HeatmapDatum[]): DatasetDescriptor | null {
-  if (heatmapRows.length === 0) {
-    return null;
-  }
-
-  return {
-    id: MAP_DATASET_IDS.heatmap,
-    label: 'Heatmap',
-    processed: processRowObject(heatmapRows),
-  };
-}
-
-function buildHeatmapLayerConfig(isVisible = true) {
-  return {
-    id: 'moi-heatmap-layer',
-    type: 'heatmap',
-    config: {
-      dataId: MAP_DATASET_IDS.heatmap,
-      label: 'Heatmap',
-      color: [203, 27, 69],
-      columns: {
-        lat: 'lat',
-        lng: 'lng',
-      },
-      isVisible,
-      visConfig: {
-        opacity: 0.72,
-        radius: 32,
-        colorRange: MODE_COLOR_RANGE,
-      },
-      hidden: false,
-      textLabel: [],
-    },
-    visualChannels: {
-      weightField: null,
-      weightScale: 'linear',
-    },
-  };
-}
-
-export function buildMapDatasets(
-  trips: TripFeatureCollection | null,
-  arcRows: ArcDatum[],
-  heatmapRows: HeatmapDatum[],
-): DatasetDescriptor[] {
-  return [...buildTripDatasets(trips), ...buildArcDatasets(arcRows), buildHeatmapDataset(heatmapRows)].filter(
-    (dataset): dataset is DatasetDescriptor => dataset !== null,
-  );
-}
 
 export function buildKeplerMapConfig(
   applied: AppliedScenario,
@@ -140,10 +71,6 @@ export function buildKeplerMapConfig(
     filters.push(buildArcTimeFilter(arcDatasetIds, playbackDomainMs, playbackValueMs));
   }
 
-  if (datasetIds.includes(MAP_DATASET_IDS.heatmap)) {
-    layers.push(buildHeatmapLayerConfig(applied.layers.heatmap));
-  }
-
   const tripTooltipFields = Object.fromEntries(
     TRIP_DATASET_IDS.map((datasetId) => [datasetId, TRIP_TOOLTIP_FIELDS]),
   );
@@ -163,7 +90,6 @@ export function buildKeplerMapConfig(
             fieldsToShow: {
               ...tripTooltipFields,
               ...arcTooltipFields,
-              [MAP_DATASET_IDS.heatmap]: HEATMAP_TOOLTIP_FIELDS,
             },
             compareMode: false,
             compareType: 'absolute',
@@ -196,7 +122,7 @@ export function buildKeplerMapConfig(
           land: true,
           '3d building': true,
         },
-        threeDBuildingColor: [218.82023004728618, 223.47597962276103, 225.4219094078171],
+        threeDBuildingColor: [176, 176, 176],
       },
     },
   };
@@ -212,11 +138,9 @@ export function replaceMapDatasets(
   const state = roomStore.getState();
   const datasetIds = datasets.map((dataset) => dataset.id);
   const currentMap = state.kepler.map[mapId];
-  const currentDatasetIds = Object.keys(currentMap?.visState.datasets ?? {}).filter((datasetId) => {
-    return isTripDatasetId(datasetId) ||
-      isArcDatasetId(datasetId) ||
-      Object.values(MAP_DATASET_IDS).includes(datasetId as (typeof MAP_DATASET_IDS)[keyof typeof MAP_DATASET_IDS]);
-  });
+  const currentDatasetIds = Object.keys(currentMap?.visState.datasets ?? {}).filter(
+    (datasetId) => isTripDatasetId(datasetId) || isArcDatasetId(datasetId),
+  );
 
   const addDataToMap = (state.kepler as KeplerSliceState['kepler'] & {
     addDataToMap: (targetMapId: string, payload: unknown) => void;

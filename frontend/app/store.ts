@@ -92,6 +92,7 @@ const initialCounts: BenchmarkCounts = {
 };
 
 const DEFAULT_LAYER_OPACITY: LayerOpacity = {
+  heatmap: 0.55,
   trips: 0.7,
   arc: 0.75,
 };

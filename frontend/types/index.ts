@@ -3,7 +3,7 @@ import type {DatasetPresetId} from '../constants/datasets';
 import type {ModeCode} from '../constants/modes';
 
 export type LayerId = 'trips' | 'arc' | 'heatmap';
-export type AdjustableLayerId = 'trips' | 'arc';
+export type AdjustableLayerId = 'trips' | 'arc' | 'heatmap';
 
 export type LayerVisibility = Record<LayerId, boolean>;
 export type LayerOpacity = Record<AdjustableLayerId, number>;
@@ -79,10 +79,13 @@ export type ArcDatum = {
 
 export type HeatmapDatum = {
   agent_id: number;
-  point_index: number;
+  segment_index: number;
+  sample_index: number;
   lng: number;
   lat: number;
   mode: number;
   mode_label: string;
   timestamp: number;
+  timestamp_ms: number;
+  weight: number;
 };

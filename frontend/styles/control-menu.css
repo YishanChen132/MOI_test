@@ -1,21 +1,43 @@
 /* 這個檔案專門放左側 Control menu 和透明度滑桿的樣式。 */
+.moi-control-shell {
+  min-height: 0;
+}
+
+.moi-control-card {
+  border-radius: 1.25rem;
+  background:
+    linear-gradient(180deg, rgb(15 18 24 / 0.96), rgb(10 12 18 / 0.96));
+  border: 1px solid rgb(255 255 255 / 0.08);
+  box-shadow:
+    0 22px 56px rgb(2 6 23 / 0.42),
+    inset 0 1px 0 rgb(255 255 255 / 0.03);
+}
+
+.moi-control-title {
+  color: rgb(203 213 225);
+  letter-spacing: 0.22em;
+}
+
 .moi-mini-stat {
   display: flex;
   min-width: 0;
   flex-direction: column;
   gap: 0.25rem;
+  min-height: 4.25rem;
+  justify-content: center;
   border: 1px solid rgb(255 255 255 / 0.08);
-  border-radius: 1rem;
-  background: rgb(255 255 255 / 0.05);
-  padding: 0.75rem;
+  border-radius: 1.05rem;
+  background: rgb(255 255 255 / 0.04);
+  padding: 0.85rem 0.9rem;
 }
 
 .moi-mini-stat span {
-  opacity: 0.72;
+  color: rgb(148 163 184);
+  opacity: 1;
 }
 
 .moi-mini-stat strong {
-  font-size: 0.95rem;
+  font-size: 1rem;
   font-weight: 700;
   color: rgb(246 248 252);
   white-space: nowrap;
@@ -23,7 +45,18 @@
   text-overflow: ellipsis;
 }
 
+.moi-section-header {
+  padding-top: 0.1rem;
+}
+
+.moi-section-title {
+  color: rgb(248 250 252);
+}
+
 .moi-section-badge {
+  border-color: rgb(255 255 255 / 0.09) !important;
+  background: rgb(10 12 18 / 0.55) !important;
+  color: rgb(248 250 252) !important;
   white-space: nowrap;
   flex-shrink: 0;
 }
@@ -32,10 +65,11 @@
   display: flex;
   align-items: center;
   gap: 0.625rem;
+  min-height: 3.7rem;
   border: 1px solid rgb(255 255 255 / 0.08);
-  border-radius: 0.95rem;
+  border-radius: 1rem;
   background: rgb(255 255 255 / 0.04);
-  padding: 0.75rem 0.85rem;
+  padding: 0.8rem 0.9rem;
   transition:
     border-color 160ms ease,
     background-color 160ms ease,
@@ -49,25 +83,29 @@
 }
 
 .moi-layer-control-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: 7.25rem minmax(0, 1fr) 3.6rem;
   align-items: center;
   gap: 0.85rem;
+  min-height: 3.7rem;
   border: 1px solid rgb(255 255 255 / 0.08);
-  border-radius: 0.95rem;
+  border-radius: 1rem;
   background: rgb(255 255 255 / 0.04);
-  padding: 0.85rem;
+  padding: 0.8rem 0.9rem;
 }
 
 .moi-layer-toggle {
   display: inline-flex;
-  min-width: 4.75rem;
+  min-width: 0;
   align-items: center;
   gap: 0.625rem;
+  color: rgb(248 250 252);
+  font-size: 1rem;
+  font-weight: 600;
   white-space: nowrap;
 }
 
 .moi-layer-slider {
-  flex: 1 1 auto;
   min-width: 0;
 }
 
@@ -94,24 +132,47 @@
 }
 
 .moi-layer-opacity-value {
-  min-width: 3rem;
+  min-width: 0;
   text-align: right;
-  color: rgb(226 232 240);
-  font-size: 0.9rem;
+  color: rgb(248 250 252);
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.moi-toggle-row [role='checkbox'],
+.moi-layer-toggle [role='checkbox'] {
+  border-color: rgb(255 255 255 / 0.2);
+  background: rgb(255 255 255 / 0.96);
+  color: rgb(15 23 42);
+}
+
+.moi-toggle-row [role='checkbox'][data-state='checked'],
+.moi-layer-toggle [role='checkbox'][data-state='checked'] {
+  background: rgb(255 255 255);
+  color: rgb(15 23 42);
+}
+
+.moi-mode-grid {
+  gap: 0.8rem;
+}
+
+.moi-toggle-row .inline-flex {
+  color: rgb(248 250 252);
+  font-size: 1rem;
+  font-weight: 600;
 }
 
 @media (max-width: 1024px) {
   .moi-layer-control-row {
-    align-items: flex-start;
-    flex-wrap: wrap;
+    grid-template-columns: 6.4rem minmax(0, 1fr) 3.2rem;
+    gap: 0.7rem;
   }
 
   .moi-layer-toggle {
-    min-width: 0;
+    font-size: 0.95rem;
   }
 
   .moi-layer-slider {
-    width: 100%;
-    flex-basis: 100%;
+    min-width: 0;
   }
 }

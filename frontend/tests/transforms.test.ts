@@ -117,21 +117,27 @@ describe('transform helpers', () => {
     expect(heatmapRows).toEqual([
       {
         agent_id: 9,
-        point_index: 1,
+        segment_index: 1,
+        sample_index: 0,
         lng: 121.46,
         lat: 25.16,
         mode: 2,
         mode_label: 'Car',
         timestamp: 12_010,
+        timestamp_ms: 1_704_079_210_000,
+        weight: 1,
       },
       {
         agent_id: 9,
-        point_index: 2,
+        segment_index: 2,
+        sample_index: 0,
         lng: 121.47,
         lat: 25.17,
         mode: 4,
         mode_label: 'Mode 4',
         timestamp: 12_020,
+        timestamp_ms: 1_704_079_220_000,
+        weight: 1,
       },
     ]);
   });

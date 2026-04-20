@@ -39,11 +39,11 @@ export function ControlMenu() {
   const layerSummary = summarizeLayers(draft.layers);
 
   return (
-    <div className="flex h-full flex-col gap-4">
-      <Card className="border-border/70 bg-card/85 shadow-lg backdrop-blur-md">
+    <div className="moi-control-shell flex h-full flex-col gap-4">
+      <Card className="moi-control-card border-border/70 bg-card/85 shadow-lg backdrop-blur-md">
         <CardHeader className="space-y-4 pb-3">
           <div className="flex items-center justify-between gap-3">
-            <CardTitle className="flex items-center gap-2 text-sm uppercase tracking-[0.22em] text-muted-foreground">
+            <CardTitle className="moi-control-title flex items-center gap-2 text-sm uppercase tracking-[0.22em] text-muted-foreground">
               <Gauge className="h-4 w-4" />
               Control menu
             </CardTitle>
@@ -65,13 +65,32 @@ export function ControlMenu() {
         </CardHeader>
         <CardContent className="space-y-5">
           <div className="space-y-3">
-            <div className="flex items-center justify-between text-sm font-medium">
-              <span>Layers</span>
+            <div className="moi-section-header flex items-center justify-between text-sm font-medium">
+              <span className="moi-section-title">Layers</span>
               <Badge className="moi-section-badge" title={layerSummary} variant="outline">
                 {enabledLayerCount} active
               </Badge>
             </div>
             <div className="space-y-2">
+              <div className="moi-layer-control-row">
+                <label className="moi-layer-toggle">
+                  <Checkbox
+                    checked={draft.layers.heatmap}
+                    onCheckedChange={(checked) => setLayerEnabled('heatmap', checked === true)}
+                  />
+                  <span>Heatmap</span>
+                </label>
+                <Slider
+                  className="moi-layer-slider"
+                  disabled={!draft.layers.heatmap}
+                  max={100}
+                  min={0}
+                  step={1}
+                  value={[opacityToSliderValue(layerOpacity.heatmap)]}
+                  onValueChange={(value) => setLayerOpacity('heatmap', sliderValueToOpacity(value[0] ?? 0))}
+                />
+                <strong className="moi-layer-opacity-value">{Math.round(layerOpacity.heatmap * 100)}%</strong>
+              </div>
               <div className="moi-layer-control-row">
                 <label className="moi-layer-toggle">
                   <Checkbox
@@ -113,11 +132,11 @@ export function ControlMenu() {
             </div>
           </div>
           <div className="space-y-3">
-            <div className="flex items-center justify-between text-sm font-medium">
-              <span>Mobility modes</span>
-              <Badge variant="outline">{draft.modes.length} selected</Badge>
+            <div className="moi-section-header flex items-center justify-between text-sm font-medium">
+              <span className="moi-section-title">Mobility modes</span>
+              <Badge className="moi-section-badge" variant="outline">{draft.modes.length} selected</Badge>
             </div>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="moi-mode-grid grid grid-cols-2 gap-2">
               {MODE_DEFINITIONS.map((mode) => (
                 <label key={mode.code} className="moi-toggle-row">
                   <Checkbox
