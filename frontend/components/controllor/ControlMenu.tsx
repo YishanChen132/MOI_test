@@ -5,10 +5,9 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-  Checkbox,
   Slider,
 } from '@sqlrooms/ui';
-import {Gauge} from 'lucide-react';
+import {Bus, Car, Eye, EyeOff, Footprints, Gauge, TrainFront} from 'lucide-react';
 import {summarizeLayers} from '../../lib/controller';
 import {MODE_DEFINITIONS} from '../../constants/modes';
 import {useRoomStore} from '../../app/store';
@@ -24,6 +23,37 @@ function sliderValueToOpacity(value: number): number {
 
 function countEnabledLayers(layers: {trips: boolean; arc: boolean; heatmap: boolean; boundary: boolean}): number {
   return [layers.trips, layers.arc, layers.heatmap, layers.boundary].filter(Boolean).length;
+}
+
+function getModeIcon(modeCode: number) {
+  if (modeCode === 1) return Footprints;
+  if (modeCode === 2) return Car;
+  if (modeCode === 8) return Bus;
+  return TrainFront;
+}
+
+function LayerVisibilityButton({
+  checked,
+  onToggle,
+  label,
+}: {
+  checked: boolean;
+  onToggle: () => void;
+  label: string;
+}) {
+  const Icon = checked ? Eye : EyeOff;
+
+  return (
+    <button
+      type="button"
+      className={`moi-layer-visibility-button${checked ? ' is-visible' : ''}`}
+      aria-pressed={checked}
+      title={label}
+      onClick={onToggle}
+    >
+      <Icon className="h-4.5 w-4.5" />
+    </button>
+  );
 }
 
 export function ControlMenu() {
@@ -66,6 +96,31 @@ export function ControlMenu() {
         <CardContent className="space-y-5">
           <div className="space-y-3">
             <div className="moi-section-header flex items-center justify-between text-sm font-medium">
+              <span className="moi-section-title">Mobility modes</span>
+              <Badge className="moi-section-badge" variant="outline">{draft.modes.length} selected</Badge>
+            </div>
+            <div className="moi-mode-strip">
+              {MODE_DEFINITIONS.map((mode) => {
+                const Icon = getModeIcon(mode.code);
+                const selected = draft.modes.includes(mode.code);
+
+                return (
+                  <button
+                    key={mode.code}
+                    type="button"
+                    className={`moi-mode-icon-button${selected ? ' is-selected' : ''}`}
+                    title={mode.label}
+                    aria-pressed={selected}
+                    onClick={() => setModeEnabled(mode.code, !selected)}
+                  >
+                    <Icon className="h-6 w-6" style={{color: selected ? mode.color : '#6b7280'}} />
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+          <div className="space-y-3">
+            <div className="moi-section-header flex items-center justify-between text-sm font-medium">
               <span className="moi-section-title">Layers</span>
               <Badge className="moi-section-badge" title={layerSummary} variant="outline">
                 {enabledLayerCount} active
@@ -74,9 +129,10 @@ export function ControlMenu() {
             <div className="space-y-2">
               <div className="moi-layer-control-row">
                 <label className="moi-layer-toggle">
-                  <Checkbox
+                  <LayerVisibilityButton
                     checked={draft.layers.boundary}
-                    onCheckedChange={(checked) => setLayerEnabled('boundary', checked === true)}
+                    label="Toggle boundary"
+                    onToggle={() => setLayerEnabled('boundary', !draft.layers.boundary)}
                   />
                   <span>Boundary</span>
                 </label>
@@ -93,9 +149,10 @@ export function ControlMenu() {
               </div>
               <div className="moi-layer-control-row">
                 <label className="moi-layer-toggle">
-                  <Checkbox
+                  <LayerVisibilityButton
                     checked={draft.layers.heatmap}
-                    onCheckedChange={(checked) => setLayerEnabled('heatmap', checked === true)}
+                    label="Toggle heatmap"
+                    onToggle={() => setLayerEnabled('heatmap', !draft.layers.heatmap)}
                   />
                   <span>Heatmap</span>
                 </label>
@@ -112,9 +169,10 @@ export function ControlMenu() {
               </div>
               <div className="moi-layer-control-row">
                 <label className="moi-layer-toggle">
-                  <Checkbox
+                  <LayerVisibilityButton
                     checked={draft.layers.arc}
-                    onCheckedChange={(checked) => setLayerEnabled('arc', checked === true)}
+                    label="Toggle arc"
+                    onToggle={() => setLayerEnabled('arc', !draft.layers.arc)}
                   />
                   <span>Arc</span>
                 </label>
@@ -131,9 +189,10 @@ export function ControlMenu() {
               </div>
               <div className="moi-layer-control-row">
                 <label className="moi-layer-toggle">
-                  <Checkbox
+                  <LayerVisibilityButton
                     checked={draft.layers.trips}
-                    onCheckedChange={(checked) => setLayerEnabled('trips', checked === true)}
+                    label="Toggle trip"
+                    onToggle={() => setLayerEnabled('trips', !draft.layers.trips)}
                   />
                   <span>Trip</span>
                 </label>
@@ -148,29 +207,6 @@ export function ControlMenu() {
                 />
                 <strong className="moi-layer-opacity-value">{Math.round(layerOpacity.trips * 100)}%</strong>
               </div>
-            </div>
-          </div>
-          <div className="space-y-3">
-            <div className="moi-section-header flex items-center justify-between text-sm font-medium">
-              <span className="moi-section-title">Mobility modes</span>
-              <Badge className="moi-section-badge" variant="outline">{draft.modes.length} selected</Badge>
-            </div>
-            <div className="moi-mode-grid grid grid-cols-2 gap-2">
-              {MODE_DEFINITIONS.map((mode) => (
-                <label key={mode.code} className="moi-toggle-row">
-                  <Checkbox
-                    checked={draft.modes.includes(mode.code)}
-                    onCheckedChange={(checked) => setModeEnabled(mode.code, checked === true)}
-                  />
-                  <span className="inline-flex items-center gap-2">
-                    <span
-                      className="h-2.5 w-2.5 rounded-full"
-                      style={{backgroundColor: mode.color}}
-                    />
-                    {mode.label}
-                  </span>
-                </label>
-              ))}
             </div>
           </div>
           {lastError ? (
