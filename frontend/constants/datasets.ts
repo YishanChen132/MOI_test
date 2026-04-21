@@ -56,7 +56,7 @@ export const DATASET_PRESETS: Record<DatasetPresetId, DatasetPreset> = {
   },
 };
 
-export const DEFAULT_DATASET_PRESET_ID: DatasetPresetId = '2000';
+export const DEFAULT_DATASET_PRESET_ID: DatasetPresetId = '9000';
 
 export function getPresetRoomDataSources(datasetId: DatasetPresetId): UrlDataSource[] {
   const preset = getDatasetPreset(datasetId);

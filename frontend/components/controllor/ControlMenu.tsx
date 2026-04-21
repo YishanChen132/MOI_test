@@ -1,40 +1,28 @@
-// 這個檔案就是目前測試版的 Control menu，負責切換圖層、透明度和載具模式。
+// 這個檔案負責組合 Control menu 的狀態摘要、模式控制、圖層控制與錯誤提示。
 import {
-  Badge,
   Card,
   CardContent,
   CardHeader,
   CardTitle,
-  Checkbox,
-  Slider,
 } from '@sqlrooms/ui';
 import {Gauge} from 'lucide-react';
 import {summarizeLayers} from '../../lib/controller';
-import {MODE_DEFINITIONS} from '../../constants/modes';
 import {useRoomStore} from '../../app/store';
-
-function opacityToSliderValue(opacity: number): number {
-  return Math.round(Math.pow(Math.max(0, Math.min(1, opacity)), 1 / 1.6) * 100);
-}
-
-function sliderValueToOpacity(value: number): number {
-  const normalized = Math.max(0, Math.min(100, value)) / 100;
-  return Math.pow(normalized, 1.6);
-}
-
-function countEnabledLayers(layers: {trips: boolean; arc: boolean; heatmap: boolean}): number {
-  return [layers.trips, layers.arc, layers.heatmap].filter(Boolean).length;
-}
+import {DatasetRowsStat} from './DatasetRowsStat';
+import {LayerControls} from './LayerControls';
+import {ModeControls} from './ModeControls';
+import {countEnabledLayers} from './controlMenuUtils';
 
 export function ControlMenu() {
   const draft = useRoomStore((state) => state.moi.draft);
   const runStatus = useRoomStore((state) => state.moi.runStatus);
-  const lastError = useRoomStore((state) => state.moi.lastError);
-  const isPlaying = useRoomStore((state) => state.moi.isPlaying);
+  const latestError = useRoomStore((state) => state.moi.benchmarks[0]?.errorMessage ?? null);
   const layerOpacity = useRoomStore((state) => state.moi.layerOpacity);
   const setLayerEnabled = useRoomStore((state) => state.moi.setLayerEnabled);
   const setLayerOpacity = useRoomStore((state) => state.moi.setLayerOpacity);
   const setModeEnabled = useRoomStore((state) => state.moi.setModeEnabled);
+  const roomInitialized = useRoomStore((state) => state.room.initialized);
+  const dataSourceStates = useRoomStore((state) => state.room.dataSourceStates);
   const enabledLayerCount = countEnabledLayers(draft.layers);
   const layerSummary = summarizeLayers(draft.layers);
 
@@ -57,106 +45,29 @@ export function ControlMenu() {
               <span>Layers</span>
               <strong title={layerSummary}>{enabledLayerCount} active</strong>
             </div>
-            <div className="moi-mini-stat">
-              <span>Playback</span>
-              <strong>{isPlaying ? 'PLAYING' : 'PAUSED'}</strong>
-            </div>
+            <DatasetRowsStat
+              datasetId={draft.datasetId}
+              roomInitialized={roomInitialized}
+              dataSourceStates={dataSourceStates}
+            />
           </div>
         </CardHeader>
         <CardContent className="space-y-5">
-          <div className="space-y-3">
-            <div className="moi-section-header flex items-center justify-between text-sm font-medium">
-              <span className="moi-section-title">Layers</span>
-              <Badge className="moi-section-badge" title={layerSummary} variant="outline">
-                {enabledLayerCount} active
-              </Badge>
-            </div>
-            <div className="space-y-2">
-              <div className="moi-layer-control-row">
-                <label className="moi-layer-toggle">
-                  <Checkbox
-                    checked={draft.layers.heatmap}
-                    onCheckedChange={(checked) => setLayerEnabled('heatmap', checked === true)}
-                  />
-                  <span>Heatmap</span>
-                </label>
-                <Slider
-                  className="moi-layer-slider"
-                  disabled={!draft.layers.heatmap}
-                  max={100}
-                  min={0}
-                  step={1}
-                  value={[opacityToSliderValue(layerOpacity.heatmap)]}
-                  onValueChange={(value) => setLayerOpacity('heatmap', sliderValueToOpacity(value[0] ?? 0))}
-                />
-                <strong className="moi-layer-opacity-value">{Math.round(layerOpacity.heatmap * 100)}%</strong>
-              </div>
-              <div className="moi-layer-control-row">
-                <label className="moi-layer-toggle">
-                  <Checkbox
-                    checked={draft.layers.arc}
-                    onCheckedChange={(checked) => setLayerEnabled('arc', checked === true)}
-                  />
-                  <span>Arc</span>
-                </label>
-                <Slider
-                  className="moi-layer-slider"
-                  disabled={!draft.layers.arc}
-                  max={100}
-                  min={0}
-                  step={1}
-                  value={[opacityToSliderValue(layerOpacity.arc)]}
-                  onValueChange={(value) => setLayerOpacity('arc', sliderValueToOpacity(value[0] ?? 0))}
-                />
-                <strong className="moi-layer-opacity-value">{Math.round(layerOpacity.arc * 100)}%</strong>
-              </div>
-              <div className="moi-layer-control-row">
-                <label className="moi-layer-toggle">
-                  <Checkbox
-                    checked={draft.layers.trips}
-                    onCheckedChange={(checked) => setLayerEnabled('trips', checked === true)}
-                  />
-                  <span>Trip</span>
-                </label>
-                <Slider
-                  className="moi-layer-slider"
-                  disabled={!draft.layers.trips}
-                  max={100}
-                  min={0}
-                  step={1}
-                  value={[opacityToSliderValue(layerOpacity.trips)]}
-                  onValueChange={(value) => setLayerOpacity('trips', sliderValueToOpacity(value[0] ?? 0))}
-                />
-                <strong className="moi-layer-opacity-value">{Math.round(layerOpacity.trips * 100)}%</strong>
-              </div>
-            </div>
-          </div>
-          <div className="space-y-3">
-            <div className="moi-section-header flex items-center justify-between text-sm font-medium">
-              <span className="moi-section-title">Mobility modes</span>
-              <Badge className="moi-section-badge" variant="outline">{draft.modes.length} selected</Badge>
-            </div>
-            <div className="moi-mode-grid grid grid-cols-2 gap-2">
-              {MODE_DEFINITIONS.map((mode) => (
-                <label key={mode.code} className="moi-toggle-row">
-                  <Checkbox
-                    checked={draft.modes.includes(mode.code)}
-                    onCheckedChange={(checked) => setModeEnabled(mode.code, checked === true)}
-                  />
-                  <span className="inline-flex items-center gap-2">
-                    <span
-                      className="h-2.5 w-2.5 rounded-full"
-                      style={{backgroundColor: mode.color}}
-                    />
-                    {mode.label}
-                  </span>
-                </label>
-              ))}
-            </div>
-          </div>
-          {lastError ? (
+          <ModeControls
+            selectedModes={draft.modes}
+            setModeEnabled={setModeEnabled}
+          />
+          <LayerControls
+            layers={draft.layers}
+            layerOpacity={layerOpacity}
+            layerSummary={layerSummary}
+            enabledLayerCount={enabledLayerCount}
+            setLayerEnabled={setLayerEnabled}
+            setLayerOpacity={setLayerOpacity}
+          />
+          {latestError ? (
             <p className="mt-3 rounded-xl border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
-              {lastError}
+              {latestError}
             </p>
           ) : null}
         </CardContent>

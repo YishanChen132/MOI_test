@@ -5,7 +5,7 @@ import {App} from './App';
 import './APP.css';
 
 createRoot(document.getElementById('root')!).render(
-  <ThemeProvider defaultTheme="dark" storageKey="moi-test-theme">
+  <ThemeProvider defaultTheme="dark" storageKey="moi-test-dark-theme">
     <App />
   </ThemeProvider>,
 );

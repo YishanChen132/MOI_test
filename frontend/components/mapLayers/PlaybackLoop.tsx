@@ -1,6 +1,6 @@
 // 這個檔案負責把播放狀態同步給 kepler，並用動畫迴圈推進時間。
 import {useEffect} from 'react';
-import {syncPlaybackWindow} from '../../lib/kepler';
+import {syncPlaybackWindow} from '../../services/kepler';
 import {roomStore, useRoomStore} from '../../app/store';
 
 type PlaybackLoopProps = {

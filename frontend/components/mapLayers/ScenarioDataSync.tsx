@@ -12,8 +12,11 @@ import {
   type ArcCacheEntry,
   type TripCacheEntry,
 } from './scenario/scenarioDataSyncHelpers';
-import {useScenarioMapSync} from './scenario/useScenarioMapSync';
+import {useArcDataSync} from './scenario/useArcDataSync';
+import {useKeplerDatasetSync} from './scenario/useKeplerDatasetSync';
+import {useScenarioRunCompletion} from './scenario/useScenarioRunCompletion';
 import {useScenarioSourceSync} from './scenario/useScenarioSourceSync';
+import {useTripDataSync} from './scenario/useTripDataSync';
 
 type ScenarioDataSyncProps = {
   mapId: string;
@@ -67,23 +70,54 @@ export function ScenarioDataSync({
     enabled: activeSourcesReady && needsArcSource && hasSelectedModes && !cachedArcEntry,
   });
 
-  useScenarioMapSync({
-    mapId,
-    applied,
-    completeRun,
-    layerOpacity,
-    roomInitialized,
-    activeSourceError,
+  useTripDataSync({
     activeSourcesReady,
+    applied,
     hasSelectedModes,
     needsTripSource,
-    needsArcSource,
     playbackRangeSeconds,
     scenarioCacheKey,
-    tripResult,
-    arcResult,
     tripCacheRef,
+    tripResult,
+  });
+
+  useArcDataSync({
+    activeSourcesReady,
+    applied,
+    hasSelectedModes,
+    needsArcSource,
+    scenarioCacheKey,
     arcCacheRef,
+    arcResult,
+  });
+
+  useKeplerDatasetSync({
+    activeSourcesReady,
+    applied,
+    arcCacheRef,
+    hasSelectedModes,
+    layerOpacity,
+    mapId,
+    needsArcSource,
+    roomInitialized,
+    scenarioCacheKey,
+  });
+
+  useScenarioRunCompletion({
+    activeSourceError,
+    activeSourcesReady,
+    applied,
+    arcCacheRef,
+    arcResult,
+    completeRun,
+    hasSelectedModes,
+    mapId,
+    needsArcSource,
+    needsTripSource,
+    roomInitialized,
+    scenarioCacheKey,
+    tripCacheRef,
+    tripResult,
   });
 
   return null;

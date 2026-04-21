@@ -14,11 +14,12 @@ describe('scenario controller helpers', () => {
   it('creates a stable initial scenario', () => {
     const scenario = createInitialScenario();
 
-    expect(scenario.datasetId).toBe('2000');
+    expect(scenario.datasetId).toBe('9000');
     expect(scenario.layers).toEqual({
       trips: false,
       arc: true,
       heatmap: false,
+      boundary: true,
     });
     expect(scenario.modes).toHaveLength(4);
     expect(scenario.timeRange).toEqual([9_000_000, 9_600_000]);
@@ -98,6 +99,7 @@ describe('scenario controller helpers', () => {
       trips: true,
       arc: false,
       heatmap: false,
+      boundary: true,
     });
   });
 
@@ -126,7 +128,7 @@ describe('scenario controller helpers', () => {
 
     expect(entry.requestId).toBe(4);
     expect(entry.durationMs).toBe(345);
-    expect(entry.layerSummary).toBe('Arc');
+    expect(entry.layerSummary).toBe('Arc + Boundary');
     expect(entry.counts.arcRows).toBe(22);
   });
 });

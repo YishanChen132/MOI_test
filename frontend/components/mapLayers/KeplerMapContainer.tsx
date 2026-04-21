@@ -63,10 +63,16 @@ const CustomWidgetContainer = styled.div`
 type InternalKeplerMapProps = {
   mapId: string;
   customLayers?: unknown[];
+  onDeckClick?: (info: unknown, event: unknown) => void;
   onDeckLayersResolved?: (layerIds: string[]) => void;
 };
 
-function InternalKeplerMap({mapId, customLayers, onDeckLayersResolved}: InternalKeplerMapProps) {
+function InternalKeplerMap({
+  mapId,
+  customLayers,
+  onDeckClick,
+  onDeckLayersResolved,
+}: InternalKeplerMapProps) {
   const bottomWidgetRef = useRef<HTMLDivElement | null>(null);
   const [containerRef, size] = useDimensions() as [
     MutableRefObject<HTMLDivElement | null>,
@@ -117,6 +123,10 @@ function InternalKeplerMap({mapId, customLayers, onDeckLayersResolved}: Internal
   const deckRenderCallbacks = useMemo(
     () => ({
       onDeckRender: (deckProps: Record<string, unknown>) => {
+        const upstreamOnClick =
+          typeof deckProps.onClick === 'function'
+            ? (deckProps.onClick as (info: unknown, event: unknown) => void)
+            : null;
         const layerIds = Array.isArray(deckProps.layers)
           ? deckProps.layers
               .map((layer) =>
@@ -127,10 +137,16 @@ function InternalKeplerMap({mapId, customLayers, onDeckLayersResolved}: Internal
               .filter(Boolean)
           : [];
         onDeckLayersResolved?.(layerIds);
-        return deckProps;
+        return {
+          ...deckProps,
+          onClick: (info: unknown, event: unknown) => {
+            upstreamOnClick?.(info, event);
+            onDeckClick?.(info, event);
+          },
+        };
       },
     }),
-    [onDeckLayersResolved],
+    [onDeckClick, onDeckLayersResolved],
   );
 
   const geoCoderPanelFields = (keplerState as any)?.visState
@@ -214,12 +230,14 @@ function InternalKeplerMap({mapId, customLayers, onDeckLayersResolved}: Internal
 type KeplerMapContainerProps = {
   mapId: string;
   customLayers?: unknown[];
+  onDeckClick?: (info: unknown, event: unknown) => void;
   onDeckLayersResolved?: (layerIds: string[]) => void;
 };
 
 export function KeplerMapContainer({
   mapId,
   customLayers,
+  onDeckClick,
   onDeckLayersResolved,
 }: KeplerMapContainerProps) {
   return (
@@ -227,6 +245,7 @@ export function KeplerMapContainer({
       <InternalKeplerMap
         mapId={mapId}
         customLayers={customLayers}
+        onDeckClick={onDeckClick}
         onDeckLayersResolved={onDeckLayersResolved}
       />
     </KeplerProvider>

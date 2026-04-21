@@ -7,6 +7,9 @@
   width: 100%;
   height: 100%;
   padding: 1rem;
+  background:
+    radial-gradient(circle at 70% 0%, rgba(46, 89, 190, 0.22), transparent 34%),
+    linear-gradient(135deg, #050914 0%, #08111f 48%, #030712 100%);
 }
 
 .moi-panel-column {
@@ -51,6 +54,16 @@
 
 .kepler-gl {
   min-height: 100%;
+  background: #050914;
+}
+
+.kepler-gl,
+.kepler-gl .map-container,
+.kepler-gl .mapboxgl-map,
+.kepler-gl .maplibregl-map,
+.mapboxgl-canvas-container,
+.maplibregl-canvas-container {
+  background-color: #050914 !important;
 }
 
 .kepler-gl [class*='bottom-widget'] {
