@@ -1,3 +1,4 @@
+// 這個檔案負責建立可點擊亮亮的 deck.gl ArcLayer custom layer。
 import {fitBounds} from '@kepler.gl/actions';
 import {ArcLayer} from '@deck.gl/layers';
 import {useCallback, useEffect, useMemo, useRef, type MutableRefObject} from 'react';

@@ -1,3 +1,4 @@
+// 這個檔案負責建立行政邊界的 deck.gl GeoJsonLayer custom layer。
 import {useMemo} from 'react';
 import {GeoJsonLayer} from '@deck.gl/layers';
 import {useRoomStore} from '../../../app/store';

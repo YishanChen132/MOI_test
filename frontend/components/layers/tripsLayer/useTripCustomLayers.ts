@@ -1,3 +1,4 @@
+// 這個檔案負責建立會跟時間軸同步播放的 deck.gl TripsLayer custom layer。
 import {TripsLayer} from '@deck.gl/geo-layers';
 import {useMemo, type MutableRefObject} from 'react';
 import {useRoomStore} from '../../../app/store';

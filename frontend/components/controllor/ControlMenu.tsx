@@ -1,99 +1,22 @@
-// 這個檔案就是目前測試版的 Control menu，負責切換圖層、透明度和載具模式。
-import {useSql} from '@sqlrooms/duckdb';
-import {DataSourceStatus} from '@sqlrooms/room-shell';
+// 這個檔案負責組合 Control menu 的狀態摘要、模式控制、圖層控制與錯誤提示。
 import {
-  Badge,
   Card,
   CardContent,
   CardHeader,
   CardTitle,
-  Slider,
 } from '@sqlrooms/ui';
-import {Bus, Car, Eye, EyeOff, Footprints, Gauge, TrainFront} from 'lucide-react';
-import {useMemo} from 'react';
+import {Gauge} from 'lucide-react';
 import {summarizeLayers} from '../../lib/controller';
-import {getDatasetPreset} from '../../constants/datasets';
-import {MODE_DEFINITIONS} from '../../constants/modes';
 import {useRoomStore} from '../../app/store';
-import {quoteIdentifier} from '../../lib/sql';
-
-type DatasetRowCount = {
-  trip_count: number;
-  arc_count: number;
-};
-
-function opacityToSliderValue(opacity: number): number {
-  return Math.round(Math.pow(Math.max(0, Math.min(1, opacity)), 1 / 1.6) * 100);
-}
-
-function sliderValueToOpacity(value: number): number {
-  const normalized = Math.max(0, Math.min(100, value)) / 100;
-  return Math.pow(normalized, 1.6);
-}
-
-function countEnabledLayers(layers: {trips: boolean; arc: boolean; heatmap: boolean; boundary: boolean}): number {
-  return [layers.trips, layers.arc, layers.heatmap, layers.boundary].filter(Boolean).length;
-}
-
-function getModeIcon(modeCode: number) {
-  if (modeCode === 1) return Footprints;
-  if (modeCode === 2) return Car;
-  if (modeCode === 8) return Bus;
-  return TrainFront;
-}
-
-function formatCount(value: number | null): string {
-  return typeof value === 'number' && Number.isFinite(value)
-    ? new Intl.NumberFormat('en-US').format(value)
-    : '...';
-}
-
-function getRowCountLabel(
-  count: DatasetRowCount | null,
-  tripTable: string,
-  arcTable: string,
-): {label: string; title: string} {
-  if (!count) {
-    return {label: '...', title: 'Loading current backend row count'};
-  }
-
-  const tripRows = formatCount(count.trip_count);
-  const arcRows = formatCount(count.arc_count);
-
-  return {
-    label: tripRows,
-    title: `Trip ${tripTable}: ${tripRows} rows; Arc ${arcTable}: ${arcRows} rows`,
-  };
-}
-
-function LayerVisibilityButton({
-  checked,
-  onToggle,
-  label,
-}: {
-  checked: boolean;
-  onToggle: () => void;
-  label: string;
-}) {
-  const Icon = checked ? Eye : EyeOff;
-
-  return (
-    <button
-      type="button"
-      className={`moi-layer-visibility-button${checked ? ' is-visible' : ''}`}
-      aria-pressed={checked}
-      title={label}
-      onClick={onToggle}
-    >
-      <Icon className="h-4.5 w-4.5" />
-    </button>
-  );
-}
+import {DatasetRowsStat} from './DatasetRowsStat';
+import {LayerControls} from './LayerControls';
+import {ModeControls} from './ModeControls';
+import {countEnabledLayers} from './controlMenuUtils';
 
 export function ControlMenu() {
   const draft = useRoomStore((state) => state.moi.draft);
   const runStatus = useRoomStore((state) => state.moi.runStatus);
-  const lastError = useRoomStore((state) => state.moi.lastError);
+  const latestError = useRoomStore((state) => state.moi.benchmarks[0]?.errorMessage ?? null);
   const layerOpacity = useRoomStore((state) => state.moi.layerOpacity);
   const setLayerEnabled = useRoomStore((state) => state.moi.setLayerEnabled);
   const setLayerOpacity = useRoomStore((state) => state.moi.setLayerOpacity);
@@ -102,32 +25,6 @@ export function ControlMenu() {
   const dataSourceStates = useRoomStore((state) => state.room.dataSourceStates);
   const enabledLayerCount = countEnabledLayers(draft.layers);
   const layerSummary = summarizeLayers(draft.layers);
-  const datasetPreset = getDatasetPreset(draft.datasetId);
-  const rowCountQuery = useMemo(
-    () => `
-      SELECT
-        (SELECT COUNT(*) FROM ${quoteIdentifier(datasetPreset.tripTable)})::DOUBLE AS trip_count,
-        (SELECT COUNT(*) FROM ${quoteIdentifier(datasetPreset.arcTable)})::DOUBLE AS arc_count
-    `,
-    [datasetPreset.arcTable, datasetPreset.tripTable],
-  );
-  const rowCountReady =
-    roomInitialized &&
-    dataSourceStates[datasetPreset.tripTable]?.status === DataSourceStatus.READY &&
-    dataSourceStates[datasetPreset.arcTable]?.status === DataSourceStatus.READY;
-  const rowCountResult = useSql<DatasetRowCount>({
-    query: rowCountQuery,
-    enabled: rowCountReady,
-  });
-  const datasetRowCount = useMemo(
-    () => Array.from(rowCountResult.data?.rows?.() ?? [])[0] ?? null,
-    [rowCountResult.data],
-  );
-  const rowCountDisplay = getRowCountLabel(
-    datasetRowCount,
-    datasetPreset.tripTable,
-    datasetPreset.arcTable,
-  );
 
   return (
     <div className="moi-control-shell flex h-full flex-col gap-4">
@@ -148,131 +45,29 @@ export function ControlMenu() {
               <span>Layers</span>
               <strong title={layerSummary}>{enabledLayerCount} active</strong>
             </div>
-            <div className="moi-mini-stat">
-              <span>Rows</span>
-              <strong title={rowCountDisplay.title}>{rowCountDisplay.label}</strong>
-            </div>
+            <DatasetRowsStat
+              datasetId={draft.datasetId}
+              roomInitialized={roomInitialized}
+              dataSourceStates={dataSourceStates}
+            />
           </div>
         </CardHeader>
         <CardContent className="space-y-5">
-          <div className="space-y-3">
-            <div className="moi-section-header flex items-center justify-between text-sm font-medium">
-              <span className="moi-section-title">Mobility modes</span>
-              <Badge className="moi-section-badge" variant="outline">{draft.modes.length} selected</Badge>
-            </div>
-            <div className="moi-mode-strip">
-              {MODE_DEFINITIONS.map((mode) => {
-                const Icon = getModeIcon(mode.code);
-                const selected = draft.modes.includes(mode.code);
-
-                return (
-                  <button
-                    key={mode.code}
-                    type="button"
-                    className={`moi-mode-icon-button${selected ? ' is-selected' : ''}`}
-                    title={mode.label}
-                    aria-pressed={selected}
-                    onClick={() => setModeEnabled(mode.code, !selected)}
-                  >
-                    <Icon className="h-6 w-6" style={{color: selected ? mode.color : '#6b7280'}} />
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-          <div className="space-y-3">
-            <div className="moi-section-header flex items-center justify-between text-sm font-medium">
-              <span className="moi-section-title">Layers</span>
-              <Badge className="moi-section-badge" title={layerSummary} variant="outline">
-                {enabledLayerCount} active
-              </Badge>
-            </div>
-            <div className="space-y-2">
-              <div className="moi-layer-control-row">
-                <label className="moi-layer-toggle">
-                  <LayerVisibilityButton
-                    checked={draft.layers.boundary}
-                    label="Toggle boundary"
-                    onToggle={() => setLayerEnabled('boundary', !draft.layers.boundary)}
-                  />
-                  <span>Boundary</span>
-                </label>
-                <Slider
-                  className="moi-layer-slider"
-                  disabled={!draft.layers.boundary}
-                  max={100}
-                  min={0}
-                  step={1}
-                  value={[opacityToSliderValue(layerOpacity.boundary)]}
-                  onValueChange={(value) => setLayerOpacity('boundary', sliderValueToOpacity(value[0] ?? 0))}
-                />
-                <strong className="moi-layer-opacity-value">{Math.round(layerOpacity.boundary * 100)}%</strong>
-              </div>
-              <div className="moi-layer-control-row">
-                <label className="moi-layer-toggle">
-                  <LayerVisibilityButton
-                    checked={draft.layers.heatmap}
-                    label="Toggle heatmap"
-                    onToggle={() => setLayerEnabled('heatmap', !draft.layers.heatmap)}
-                  />
-                  <span>Heatmap</span>
-                </label>
-                <Slider
-                  className="moi-layer-slider"
-                  disabled={!draft.layers.heatmap}
-                  max={100}
-                  min={0}
-                  step={1}
-                  value={[opacityToSliderValue(layerOpacity.heatmap)]}
-                  onValueChange={(value) => setLayerOpacity('heatmap', sliderValueToOpacity(value[0] ?? 0))}
-                />
-                <strong className="moi-layer-opacity-value">{Math.round(layerOpacity.heatmap * 100)}%</strong>
-              </div>
-              <div className="moi-layer-control-row">
-                <label className="moi-layer-toggle">
-                  <LayerVisibilityButton
-                    checked={draft.layers.arc}
-                    label="Toggle arc"
-                    onToggle={() => setLayerEnabled('arc', !draft.layers.arc)}
-                  />
-                  <span>Arc</span>
-                </label>
-                <Slider
-                  className="moi-layer-slider"
-                  disabled={!draft.layers.arc}
-                  max={100}
-                  min={0}
-                  step={1}
-                  value={[opacityToSliderValue(layerOpacity.arc)]}
-                  onValueChange={(value) => setLayerOpacity('arc', sliderValueToOpacity(value[0] ?? 0))}
-                />
-                <strong className="moi-layer-opacity-value">{Math.round(layerOpacity.arc * 100)}%</strong>
-              </div>
-              <div className="moi-layer-control-row">
-                <label className="moi-layer-toggle">
-                  <LayerVisibilityButton
-                    checked={draft.layers.trips}
-                    label="Toggle trip"
-                    onToggle={() => setLayerEnabled('trips', !draft.layers.trips)}
-                  />
-                  <span>Trip</span>
-                </label>
-                <Slider
-                  className="moi-layer-slider"
-                  disabled={!draft.layers.trips}
-                  max={100}
-                  min={0}
-                  step={1}
-                  value={[opacityToSliderValue(layerOpacity.trips)]}
-                  onValueChange={(value) => setLayerOpacity('trips', sliderValueToOpacity(value[0] ?? 0))}
-                />
-                <strong className="moi-layer-opacity-value">{Math.round(layerOpacity.trips * 100)}%</strong>
-              </div>
-            </div>
-          </div>
-          {lastError ? (
+          <ModeControls
+            selectedModes={draft.modes}
+            setModeEnabled={setModeEnabled}
+          />
+          <LayerControls
+            layers={draft.layers}
+            layerOpacity={layerOpacity}
+            layerSummary={layerSummary}
+            enabledLayerCount={enabledLayerCount}
+            setLayerEnabled={setLayerEnabled}
+            setLayerOpacity={setLayerOpacity}
+          />
+          {latestError ? (
             <p className="mt-3 rounded-xl border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
-              {lastError}
+              {latestError}
             </p>
           ) : null}
         </CardContent>

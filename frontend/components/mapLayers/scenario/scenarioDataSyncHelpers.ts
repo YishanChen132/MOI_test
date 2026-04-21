@@ -1,13 +1,12 @@
 // 這個檔案負責放地圖資料同步會共用到的快取型別、空資料和小工具函式。
 import type * as arrow from 'apache-arrow';
 import type {DatasetPresetId} from '../../../constants/datasets';
-import type {DatasetDescriptor} from '../../../lib/kepler';
+import type {DatasetDescriptor} from '../../../services/kepler';
 import type {ArcDatum, BenchmarkCounts, QueryTrajectoryRow} from '../../../types';
 
 export type TripCacheEntry = {
   arrowTable: arrow.Table | null;
   trajectoryRows: QueryTrajectoryRow[];
-  tripDatasets: DatasetDescriptor[];
   tripSegments: number;
   heatmapPoints: number;
 };
@@ -28,11 +27,9 @@ export function buildScenarioCacheKey(datasetId: DatasetPresetId, modes: readonl
 }
 
 export function buildDatasetList(
-  tripCacheEntry: TripCacheEntry | null,
   arcCacheEntry: ArcCacheEntry | null,
 ): DatasetDescriptor[] {
   return [
-    ...(tripCacheEntry?.tripDatasets ?? []),
     ...(arcCacheEntry?.arcDatasets ?? []),
   ];
 }
