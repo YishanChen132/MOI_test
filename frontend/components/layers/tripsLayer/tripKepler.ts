@@ -3,7 +3,8 @@ import {processGeojson} from '@kepler.gl/processors';
 import {MODE_DEFINITIONS} from '../../../constants/modes';
 import type {TripFeatureCollection} from '../../../types';
 
-const TRIP_TRAIL_LENGTH_SECONDS = 60;
+const TRIP_TRAIL_LENGTH_SECONDS = 600;
+const TRIP_LAYER_COLOR: [number, number, number] = [255, 150, 150];
 
 type DatasetDescriptor = {
   id: string;
@@ -54,14 +55,14 @@ export function buildTripLayerConfigs(isVisible = true, opacity = 0.85) {
     config: {
       dataId: `moi_trip_segments_mode_${mode.code}`,
       label: `Trips ${mode.label}`,
-      color: hexToRgb(mode.tripColor),
+      color: TRIP_LAYER_COLOR,
       columns: {
         geojson: '_geojson',
       },
       isVisible,
       visConfig: {
         opacity,
-        thickness: 1.2,
+        thickness: 1.8,
         trailLength: TRIP_TRAIL_LENGTH_SECONDS,
         fadeTrail: true,
         billboard: false,
@@ -77,17 +78,4 @@ export function buildTripLayerConfigs(isVisible = true, opacity = 0.85) {
       sizeScale: 'linear',
     },
   }));
-}
-
-function hexToRgb(hex: string): [number, number, number] {
-  const normalized = hex.replace('#', '');
-  const value = normalized.length === 3
-    ? normalized.split('').map((digit) => `${digit}${digit}`).join('')
-    : normalized;
-
-  const red = Number.parseInt(value.slice(0, 2), 16);
-  const green = Number.parseInt(value.slice(2, 4), 16);
-  const blue = Number.parseInt(value.slice(4, 6), 16);
-
-  return [red, green, blue];
 }

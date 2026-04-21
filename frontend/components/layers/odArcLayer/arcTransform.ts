@@ -47,6 +47,7 @@ export function flattenArcRows(
       }
 
       result.push({
+        arc_key: buildArcKey(row.agent_id, segmentIndex, mode, timestamp),
         agent_id: row.agent_id,
         segment_index: segmentIndex,
         source_lng: sourceLng,
@@ -63,4 +64,13 @@ export function flattenArcRows(
   }
 
   return result;
+}
+
+export function buildArcKey(
+  agentId: number,
+  segmentIndex: number,
+  mode: number,
+  timestamp: number,
+): string {
+  return `${agentId}:${segmentIndex}:${mode}:${timestamp}`;
 }

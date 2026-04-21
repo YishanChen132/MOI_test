@@ -6,6 +6,8 @@ import {ScenarioDataSync} from './ScenarioDataSync';
 import {KeplerMapContainer} from './KeplerMapContainer';
 import {useHeatmapCustomLayers} from '../layers/heatmapLayer/useHeatmapCustomLayers';
 import {useBoundaryCustomLayers} from '../layers/boundaryLayer/useBoundaryCustomLayers';
+import {useArcCustomLayers} from '../layers/odArcLayer/useArcCustomLayers';
+import {useTripCustomLayers} from '../layers/tripsLayer/useTripCustomLayers';
 import {useRoomStore} from '../../app/store';
 import type {
   ArcCacheEntry,
@@ -17,8 +19,15 @@ export function MapLayers() {
   const tripCacheRef = useRef(new Map<string, TripCacheEntry>());
   const arcCacheRef = useRef(new Map<string, ArcCacheEntry>());
   const {layers: heatmapCustomLayers} = useHeatmapCustomLayers(tripCacheRef);
+  const {layers: tripCustomLayers} = useTripCustomLayers(tripCacheRef);
   const {layers: boundaryCustomLayers} = useBoundaryCustomLayers();
-  const customLayers = [...boundaryCustomLayers, ...heatmapCustomLayers];
+  const {layers: arcCustomLayers, onDeckClick} = useArcCustomLayers(arcCacheRef, currentMapId);
+  const customLayers = [
+    ...boundaryCustomLayers,
+    ...heatmapCustomLayers,
+    ...tripCustomLayers,
+    ...arcCustomLayers,
+  ];
 
   if (!currentMapId) {
     return (
@@ -35,7 +44,11 @@ export function MapLayers() {
 
       <div className="relative min-h-0 flex-1">
         <div className="absolute inset-0">
-          <KeplerMapContainer customLayers={customLayers} mapId={currentMapId} />
+          <KeplerMapContainer
+            customLayers={customLayers}
+            mapId={currentMapId}
+            onDeckClick={onDeckClick}
+          />
         </div>
       </div>
     </div>

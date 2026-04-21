@@ -63,7 +63,19 @@ export type TripFeatureCollection = GeoJSON.FeatureCollection<
   TripFeatureProperties
 >;
 
+export type TripLayerDatum = {
+  agent_id: number;
+  segment_index: number;
+  mode: number;
+  mode_label: string;
+  start_time: number;
+  end_time: number;
+  path: [number, number][];
+  timestamps: number[];
+};
+
 export type ArcDatum = {
+  arc_key: string;
   agent_id: number;
   segment_index: number;
   source_lng: number;

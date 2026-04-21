@@ -1,4 +1,6 @@
 // 這個檔案就是目前測試版的 Control menu，負責切換圖層、透明度和載具模式。
+import {useSql} from '@sqlrooms/duckdb';
+import {DataSourceStatus} from '@sqlrooms/room-shell';
 import {
   Badge,
   Card,
@@ -8,9 +10,17 @@ import {
   Slider,
 } from '@sqlrooms/ui';
 import {Bus, Car, Eye, EyeOff, Footprints, Gauge, TrainFront} from 'lucide-react';
+import {useMemo} from 'react';
 import {summarizeLayers} from '../../lib/controller';
+import {getDatasetPreset} from '../../constants/datasets';
 import {MODE_DEFINITIONS} from '../../constants/modes';
 import {useRoomStore} from '../../app/store';
+import {quoteIdentifier} from '../../lib/sql';
+
+type DatasetRowCount = {
+  trip_count: number;
+  arc_count: number;
+};
 
 function opacityToSliderValue(opacity: number): number {
   return Math.round(Math.pow(Math.max(0, Math.min(1, opacity)), 1 / 1.6) * 100);
@@ -30,6 +40,30 @@ function getModeIcon(modeCode: number) {
   if (modeCode === 2) return Car;
   if (modeCode === 8) return Bus;
   return TrainFront;
+}
+
+function formatCount(value: number | null): string {
+  return typeof value === 'number' && Number.isFinite(value)
+    ? new Intl.NumberFormat('en-US').format(value)
+    : '...';
+}
+
+function getRowCountLabel(
+  count: DatasetRowCount | null,
+  tripTable: string,
+  arcTable: string,
+): {label: string; title: string} {
+  if (!count) {
+    return {label: '...', title: 'Loading current backend row count'};
+  }
+
+  const tripRows = formatCount(count.trip_count);
+  const arcRows = formatCount(count.arc_count);
+
+  return {
+    label: tripRows,
+    title: `Trip ${tripTable}: ${tripRows} rows; Arc ${arcTable}: ${arcRows} rows`,
+  };
 }
 
 function LayerVisibilityButton({
@@ -60,13 +94,40 @@ export function ControlMenu() {
   const draft = useRoomStore((state) => state.moi.draft);
   const runStatus = useRoomStore((state) => state.moi.runStatus);
   const lastError = useRoomStore((state) => state.moi.lastError);
-  const isPlaying = useRoomStore((state) => state.moi.isPlaying);
   const layerOpacity = useRoomStore((state) => state.moi.layerOpacity);
   const setLayerEnabled = useRoomStore((state) => state.moi.setLayerEnabled);
   const setLayerOpacity = useRoomStore((state) => state.moi.setLayerOpacity);
   const setModeEnabled = useRoomStore((state) => state.moi.setModeEnabled);
+  const roomInitialized = useRoomStore((state) => state.room.initialized);
+  const dataSourceStates = useRoomStore((state) => state.room.dataSourceStates);
   const enabledLayerCount = countEnabledLayers(draft.layers);
   const layerSummary = summarizeLayers(draft.layers);
+  const datasetPreset = getDatasetPreset(draft.datasetId);
+  const rowCountQuery = useMemo(
+    () => `
+      SELECT
+        (SELECT COUNT(*) FROM ${quoteIdentifier(datasetPreset.tripTable)})::DOUBLE AS trip_count,
+        (SELECT COUNT(*) FROM ${quoteIdentifier(datasetPreset.arcTable)})::DOUBLE AS arc_count
+    `,
+    [datasetPreset.arcTable, datasetPreset.tripTable],
+  );
+  const rowCountReady =
+    roomInitialized &&
+    dataSourceStates[datasetPreset.tripTable]?.status === DataSourceStatus.READY &&
+    dataSourceStates[datasetPreset.arcTable]?.status === DataSourceStatus.READY;
+  const rowCountResult = useSql<DatasetRowCount>({
+    query: rowCountQuery,
+    enabled: rowCountReady,
+  });
+  const datasetRowCount = useMemo(
+    () => Array.from(rowCountResult.data?.rows?.() ?? [])[0] ?? null,
+    [rowCountResult.data],
+  );
+  const rowCountDisplay = getRowCountLabel(
+    datasetRowCount,
+    datasetPreset.tripTable,
+    datasetPreset.arcTable,
+  );
 
   return (
     <div className="moi-control-shell flex h-full flex-col gap-4">
@@ -88,8 +149,8 @@ export function ControlMenu() {
               <strong title={layerSummary}>{enabledLayerCount} active</strong>
             </div>
             <div className="moi-mini-stat">
-              <span>Playback</span>
-              <strong>{isPlaying ? 'PLAYING' : 'PAUSED'}</strong>
+              <span>Rows</span>
+              <strong title={rowCountDisplay.title}>{rowCountDisplay.label}</strong>
             </div>
           </div>
         </CardHeader>

@@ -3,8 +3,7 @@ import type * as arrow from 'apache-arrow';
 import {useEffect, useRef, type MutableRefObject} from 'react';
 import {buildArcDatasets} from '../../layers/odArcLayer/arcKepler';
 import {flattenArcRows} from '../../layers/odArcLayer/arcTransform';
-import {buildTripDatasets} from '../../layers/tripsLayer/tripKepler';
-import {segmentTripRows} from '../../layers/tripsLayer/tripTransform';
+import {countTripLayerSegments} from '../../layers/tripsLayer/tripTransform';
 import {replaceMapDatasets} from '../../../lib/kepler';
 import {millisecondsRangeToSeconds, PLAYBACK_DOMAIN} from '../../../lib/timeplayback';
 import type {
@@ -27,6 +26,21 @@ type TrajectoryQueryResult = {
   error?: Error | null;
   isLoading: boolean;
 };
+
+function buildTripCacheEntry(
+  tripRows: QueryTrajectoryRow[],
+  playbackRangeSeconds: TimeRangeSeconds,
+  selectedModes: readonly number[],
+  arrowTable: arrow.Table | null,
+): TripCacheEntry {
+  return {
+    arrowTable,
+    trajectoryRows: tripRows,
+    tripDatasets: [],
+    tripSegments: countTripLayerSegments(tripRows, selectedModes, playbackRangeSeconds),
+    heatmapPoints: tripRows.length,
+  };
+}
 
 type UseScenarioMapSyncArgs = {
   mapId: string;
@@ -129,17 +143,12 @@ export function useScenarioMapSync({
 
     if (!nextTripEntry && tripResult.data) {
       const tripRows = Array.from(tripResult.data.rows());
-      const tripFeatures = applied.layers.trips
-        ? segmentTripRows(tripRows, applied.modes, playbackRangeSeconds)
-        : null;
-
-      nextTripEntry = {
-        arrowTable: tripResult.data.arrowTable ?? null,
-        trajectoryRows: tripRows,
-        tripDatasets: buildTripDatasets(tripFeatures),
-        tripSegments: tripFeatures?.features.length ?? 0,
-        heatmapPoints: applied.layers.heatmap ? tripRows.length : 0,
-      };
+      nextTripEntry = buildTripCacheEntry(
+        tripRows,
+        playbackRangeSeconds,
+        applied.modes,
+        tripResult.data.arrowTable ?? null,
+      );
       tripCacheRef.current.set(scenarioCacheKey, nextTripEntry);
     }
 
@@ -152,7 +161,7 @@ export function useScenarioMapSync({
 
       nextArcEntry = {
         arcDatasets: buildArcDatasets(arcRows),
-        arcRows: arcRows.length,
+        arcRows,
       };
       arcCacheRef.current.set(scenarioCacheKey, nextArcEntry);
     }
@@ -171,7 +180,7 @@ export function useScenarioMapSync({
 
     const counts: BenchmarkCounts = {
       tripSegments: applied.layers.trips ? nextTripEntry?.tripSegments ?? 0 : 0,
-      arcRows: applied.layers.arc ? nextArcEntry?.arcRows ?? 0 : 0,
+      arcRows: applied.layers.arc ? nextArcEntry?.arcRows.length ?? 0 : 0,
       heatmapPoints: applied.layers.heatmap ? nextTripEntry?.heatmapPoints ?? 0 : 0,
     };
 

@@ -2,7 +2,7 @@
 import type * as arrow from 'apache-arrow';
 import type {DatasetPresetId} from '../../../constants/datasets';
 import type {DatasetDescriptor} from '../../../lib/kepler';
-import type {BenchmarkCounts, QueryTrajectoryRow} from '../../../types';
+import type {ArcDatum, BenchmarkCounts, QueryTrajectoryRow} from '../../../types';
 
 export type TripCacheEntry = {
   arrowTable: arrow.Table | null;
@@ -14,7 +14,7 @@ export type TripCacheEntry = {
 
 export type ArcCacheEntry = {
   arcDatasets: DatasetDescriptor[];
-  arcRows: number;
+  arcRows: ArcDatum[];
 };
 
 export const EMPTY_COUNTS: BenchmarkCounts = {

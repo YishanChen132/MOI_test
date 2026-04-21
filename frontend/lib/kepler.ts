@@ -14,10 +14,7 @@ import {
   isArcDatasetId,
 } from '../components/layers/odArcLayer/arcKepler';
 import {
-  buildTripLayerConfigs,
   isTripDatasetId,
-  TRIP_DATASET_IDS,
-  TRIP_TOOLTIP_FIELDS,
 } from '../components/layers/tripsLayer/tripKepler';
 import {
   millisecondsOfDayToPlaybackEpochMs,
@@ -62,18 +59,11 @@ export function buildKeplerMapConfig(
   const playbackValueMs = applied.timeRange.map(millisecondsOfDayToPlaybackEpochMs) as [number, number];
   const arcDatasetIds = datasetIds.filter(isArcDatasetId);
 
-  if (datasetIds.some(isTripDatasetId)) {
-    layers.push(...buildTripLayerConfigs(applied.layers.trips, layerOpacity.trips));
-  }
-
   if (arcDatasetIds.length > 0) {
-    layers.push(...buildArcLayerConfigs(applied.layers.arc, layerOpacity.arc));
+    layers.push(...buildArcLayerConfigs(false, 0));
     filters.push(buildArcTimeFilter(arcDatasetIds, playbackDomainMs, playbackValueMs));
   }
 
-  const tripTooltipFields = Object.fromEntries(
-    TRIP_DATASET_IDS.map((datasetId) => [datasetId, TRIP_TOOLTIP_FIELDS]),
-  );
   const arcTooltipFields = Object.fromEntries(
     ARC_DATASET_IDS.map((datasetId) => [datasetId, ARC_TOOLTIP_FIELDS]),
   );
@@ -88,7 +78,6 @@ export function buildKeplerMapConfig(
           tooltip: {
             enabled: true,
             fieldsToShow: {
-              ...tripTooltipFields,
               ...arcTooltipFields,
             },
             compareMode: false,

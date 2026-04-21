@@ -50,6 +50,7 @@ type MoiSliceState = {
     benchmarks: BenchmarkEntry[];
     lastError: string | null;
     lastCounts: BenchmarkCounts;
+    selectedArcKey: string | null;
     layerOpacity: LayerOpacity;
     isPlaying: boolean;
     tickStartTimestamp: number | null;
@@ -61,6 +62,8 @@ type MoiSliceState = {
     setLayerEnabled: (layerId: LayerId, enabled: boolean) => void;
     setModeEnabled: (mode: ModeCode, enabled: boolean) => void;
     setLayerOpacity: (layerId: AdjustableLayerId, opacity: number) => void;
+    setSelectedArc: (arcKey: string | null) => void;
+    clearSelectedArc: () => void;
     startPlayback: () => void;
     pausePlayback: () => void;
     tickPlayback: (now?: number) => void;
@@ -169,6 +172,7 @@ export const {roomStore, useRoomStore} = createRoomStore<RoomState>((set, get, s
     benchmarks: [],
     lastError: null,
     lastCounts: initialCounts,
+    selectedArcKey: null,
     layerOpacity: DEFAULT_LAYER_OPACITY,
     isPlaying: false,
     tickStartTimestamp: null,
@@ -192,6 +196,8 @@ export const {roomStore, useRoomStore} = createRoomStore<RoomState>((set, get, s
       set((state) => ({
         moi: {
           ...state.moi,
+          selectedArcKey:
+            layerId === 'arc' && !enabled ? null : state.moi.selectedArcKey,
           draft: {
             ...state.moi.draft,
             layers: {
@@ -223,6 +229,22 @@ export const {roomStore, useRoomStore} = createRoomStore<RoomState>((set, get, s
             ...state.moi.layerOpacity,
             [layerId]: Math.max(0.02, Math.min(1, opacity)),
           },
+        },
+      }));
+    },
+    setSelectedArc: (arcKey) => {
+      set((state) => ({
+        moi: {
+          ...state.moi,
+          selectedArcKey: arcKey,
+        },
+      }));
+    },
+    clearSelectedArc: () => {
+      set((state) => ({
+        moi: {
+          ...state.moi,
+          selectedArcKey: null,
         },
       }));
     },

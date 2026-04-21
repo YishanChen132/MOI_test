@@ -74,6 +74,7 @@ describe('transform helpers', () => {
 
     expect(arcRows).toEqual([
       {
+        arc_key: '4:0:2:11000',
         agent_id: 4,
         segment_index: 0,
         source_lng: 121.4,
@@ -87,6 +88,7 @@ describe('transform helpers', () => {
         timestamp_iso: '2024-01-01T03:03:20Z',
       },
       {
+        arc_key: '4:1:8:11050',
         agent_id: 4,
         segment_index: 1,
         source_lng: 121.41,
