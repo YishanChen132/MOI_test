@@ -1,6 +1,6 @@
 // 這個檔案就是目前地圖主畫面，負責把 kepler 地圖、資料同步、heatmap customLayers 和播放循環組起來。
 import {Card} from '@sqlrooms/ui';
-import {useCallback, useRef, useState} from 'react';
+import {useCallback, useRef} from 'react';
 import {PlaybackLoop} from './PlaybackLoop';
 import {ScenarioDataSync} from './ScenarioDataSync';
 import {KeplerMapContainer} from './KeplerMapContainer';
@@ -14,98 +14,24 @@ import type {
   ArcCacheEntry,
   TripCacheEntry,
 } from './scenario/scenarioDataSyncHelpers';
-import type {FlowmapTooltipState} from '../../features/flowmap/useFlowmapLayer';
-
-type HoveredFlowObject = {
-  type?: string;
-  count?: number;
-  origin?: {
-    id?: string | number;
-    name?: string;
-    lon?: number;
-    lat?: number;
-  };
-  dest?: {
-    id?: string | number;
-    name?: string;
-    lon?: number;
-    lat?: number;
-  };
-};
-
-type DeckHoverInfo = {
-  object?: HoveredFlowObject | null;
-  layer?: {
-    id?: string;
-  } | null;
-  x?: number;
-  y?: number;
-};
-
-function formatLocationLabel(location: HoveredFlowObject['origin']): string {
-  if (!location) {
-    return 'Unknown';
-  }
-
-  if (typeof location.name === 'string' && location.name.trim()) {
-    return location.name;
-  }
-
-  if (typeof location.id === 'string' || typeof location.id === 'number') {
-    return String(location.id);
-  }
-
-  if (Number.isFinite(location.lon) && Number.isFinite(location.lat)) {
-    return `${location.lon},${location.lat}`;
-  }
-
-  return 'Unknown';
-}
-
-function isFlowHoverInfo(info: DeckHoverInfo | null | undefined): info is DeckHoverInfo & {
-  object: HoveredFlowObject;
-  x: number;
-  y: number;
-} {
-  return Boolean(
-    info &&
-    info.layer?.id === 'moi-flowmap-layer' &&
-    info.object?.type === 'flow' &&
-    typeof info.object.count === 'number' &&
-    typeof info.x === 'number' &&
-    typeof info.y === 'number',
-  );
-}
 
 export function MapLayers() {
   const currentMapId = useRoomStore((state) => state.kepler.config.currentMapId);
   const tripCacheRef = useRef(new Map<string, TripCacheEntry>());
   const arcCacheRef = useRef(new Map<string, ArcCacheEntry>());
-  const [hoveredFlowTooltip, setHoveredFlowTooltip] = useState<FlowmapTooltipState | null>(null);
   const {layers: heatmapCustomLayers} = useHeatmapCustomLayers(tripCacheRef);
   const {layers: tripCustomLayers} = useTripCustomLayers(tripCacheRef);
   const {layers: boundaryCustomLayers} = useBoundaryCustomLayers();
   const {layers: arcCustomLayers, onDeckClick: onArcDeckClick} = useArcCustomLayers(arcCacheRef, currentMapId);
-  const {layers: flowmapCustomLayers, onDeckClick: onFlowmapDeckClick} = useFlowmapLayer();
+  const {
+    layers: flowmapCustomLayers,
+    onDeckClick: onFlowmapDeckClick,
+    hoveredFlowTooltip,
+  } = useFlowmapLayer();
   const onDeckClick = useCallback((info: unknown) => {
     onArcDeckClick(info);
     onFlowmapDeckClick(info);
   }, [onArcDeckClick, onFlowmapDeckClick]);
-  const onDeckHover = useCallback((info: unknown) => {
-    const hoverInfo = info as DeckHoverInfo | null;
-    if (!isFlowHoverInfo(hoverInfo)) {
-      setHoveredFlowTooltip(null);
-      return;
-    }
-
-    setHoveredFlowTooltip({
-      x: hoverInfo.x,
-      y: hoverInfo.y,
-      originLabel: formatLocationLabel(hoverInfo.object.origin),
-      destLabel: formatLocationLabel(hoverInfo.object.dest),
-      count: hoverInfo.object.count ?? 0,
-    });
-  }, []);
   const customLayers = [
     ...boundaryCustomLayers,
     ...heatmapCustomLayers,
@@ -133,22 +59,21 @@ export function MapLayers() {
             customLayers={customLayers}
             mapId={currentMapId}
             onDeckClick={onDeckClick}
-            onDeckHover={onDeckHover}
           />
         </div>
         {hoveredFlowTooltip ? (
           <div
-            className="pointer-events-none absolute z-20 min-w-[220px] rounded-lg border border-border/80 bg-card/95 px-3 py-2 text-xs shadow-xl backdrop-blur-sm"
+            className="pointer-events-none absolute z-20 min-w-[140px] rounded-lg border border-slate-500/70 bg-slate-700/95 px-3 py-2 text-xs shadow-xl backdrop-blur-sm"
             style={{
               left: hoveredFlowTooltip.x + 14,
               top: hoveredFlowTooltip.y + 14,
             }}
           >
-            <div className="font-medium text-foreground">
-              {hoveredFlowTooltip.originLabel} to {hoveredFlowTooltip.destLabel}
+            <div className="font-medium text-slate-100">
+              {`${hoveredFlowTooltip.originLabel} -> ${hoveredFlowTooltip.destLabel}`}
             </div>
-            <div className="mt-1 text-muted-foreground">
-              {hoveredFlowTooltip.count} flow{hoveredFlowTooltip.count === 1 ? '' : 's'}
+            <div className="font-medium text-slate-100">
+              {hoveredFlowTooltip.count} 條
             </div>
           </div>
         ) : null}
