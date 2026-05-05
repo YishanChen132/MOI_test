@@ -23,6 +23,10 @@ export function createMobilitySlice(
   | 'setLayerOpacity'
   | 'setSelectedArc'
   | 'clearSelectedArc'
+  | 'setFlowmapEnabled'
+  | 'setFlowmapOpacity'
+  | 'setSelectedFlowId'
+  | 'clearSelectedFlowId'
   | 'getLayerSummary'
 > {
   return {
@@ -87,6 +91,39 @@ export function createMobilitySlice(
         moi: {
           ...state.moi,
           selectedArcKey: null,
+        },
+      }));
+    },
+    setFlowmapEnabled: (enabled) => {
+      set((state) => ({
+        moi: {
+          ...state.moi,
+          flowmapEnabled: enabled,
+          selectedFlowId: enabled ? state.moi.selectedFlowId : null,
+        },
+      }));
+    },
+    setFlowmapOpacity: (opacity) => {
+      set((state) => ({
+        moi: {
+          ...state.moi,
+          flowmapOpacity: Math.max(0.02, Math.min(1, opacity)),
+        },
+      }));
+    },
+    setSelectedFlowId: (flowId) => {
+      set((state) => ({
+        moi: {
+          ...state.moi,
+          selectedFlowId: flowId,
+        },
+      }));
+    },
+    clearSelectedFlowId: () => {
+      set((state) => ({
+        moi: {
+          ...state.moi,
+          selectedFlowId: null,
         },
       }));
     },

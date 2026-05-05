@@ -8,6 +8,7 @@ import type {
   BenchmarkEntry,
   LayerId,
   LayerOpacity,
+  PlaybackHistogramBin,
   ScenarioConfig,
   TimeRangeMilliseconds,
 } from '../types';
@@ -22,6 +23,9 @@ export type AppSliceState = {
     benchmarks: BenchmarkEntry[];
     lastCounts: BenchmarkCounts;
     selectedArcKey: string | null;
+    flowmapEnabled: boolean;
+    flowmapOpacity: number;
+    selectedFlowId: string | null;
     layerOpacity: LayerOpacity;
     isPlaying: boolean;
     tickStartTimestamp: number | null;
@@ -29,12 +33,17 @@ export type AppSliceState = {
     timeScale: number;
     viewTimeRange: TimeRangeMilliseconds;
     displayTimeRange: TimeRangeMilliseconds;
+    playbackHistogramBins: PlaybackHistogramBin[];
     setDatasetPreset: (datasetId: DatasetPresetId) => void;
     setLayerEnabled: (layerId: LayerId, enabled: boolean) => void;
     setModeEnabled: (mode: ModeCode, enabled: boolean) => void;
     setLayerOpacity: (layerId: AdjustableLayerId, opacity: number) => void;
     setSelectedArc: (arcKey: string | null) => void;
     clearSelectedArc: () => void;
+    setFlowmapEnabled: (enabled: boolean) => void;
+    setFlowmapOpacity: (opacity: number) => void;
+    setSelectedFlowId: (flowId: string | null) => void;
+    clearSelectedFlowId: () => void;
     startPlayback: () => void;
     pausePlayback: () => void;
     tickPlayback: (now?: number) => void;
@@ -42,6 +51,7 @@ export type AppSliceState = {
     setDisplayTimeRange: (nextRange: TimeRangeMilliseconds) => void;
     setTimeRange: (nextRange: TimeRangeMilliseconds) => void;
     setPlaybackSpeed: (speed: number) => void;
+    setPlaybackHistogramBins: (bins: PlaybackHistogramBin[]) => void;
     applyDraft: () => void;
     completeRun: (
       requestId: number,

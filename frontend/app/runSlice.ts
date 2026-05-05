@@ -13,6 +13,7 @@ export function createRunSlice(
   AppSliceState['moi'],
   | 'completeRun'
   | 'clearBenchmarks'
+  | 'setPlaybackHistogramBins'
 > {
   return {
     completeRun: (requestId, counts, status, errorMessage) => {
@@ -39,6 +40,14 @@ export function createRunSlice(
         moi: {
           ...state.moi,
           benchmarks: [],
+        },
+      }));
+    },
+    setPlaybackHistogramBins: (bins) => {
+      set((state) => ({
+        moi: {
+          ...state.moi,
+          playbackHistogramBins: bins,
         },
       }));
     },

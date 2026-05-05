@@ -20,8 +20,8 @@ export function countEnabledLayers(layers: {
   arc: boolean;
   heatmap: boolean;
   boundary: boolean;
-}): number {
-  return [layers.trips, layers.arc, layers.heatmap, layers.boundary].filter(Boolean).length;
+}, flowmapEnabled = false): number {
+  return [layers.trips, layers.arc, layers.heatmap, layers.boundary, flowmapEnabled].filter(Boolean).length;
 }
 
 export function getModeIcon(modeCode: number) {

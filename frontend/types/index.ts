@@ -10,6 +10,11 @@ export type LayerOpacity = Record<AdjustableLayerId, number>;
 
 export type TimeRangeMilliseconds = [number, number];
 export type TimeRangeSeconds = [number, number];
+export type PlaybackHistogramBin = {
+  startMs: number;
+  endMs: number;
+  count: number;
+};
 
 export type ScenarioConfig = {
   datasetId: DatasetPresetId;

@@ -64,6 +64,7 @@ type InternalKeplerMapProps = {
   mapId: string;
   customLayers?: unknown[];
   onDeckClick?: (info: unknown, event: unknown) => void;
+  onDeckHover?: (info: unknown, event: unknown) => void;
   onDeckLayersResolved?: (layerIds: string[]) => void;
 };
 
@@ -71,6 +72,7 @@ function InternalKeplerMap({
   mapId,
   customLayers,
   onDeckClick,
+  onDeckHover,
   onDeckLayersResolved,
 }: InternalKeplerMapProps) {
   const bottomWidgetRef = useRef<HTMLDivElement | null>(null);
@@ -127,6 +129,10 @@ function InternalKeplerMap({
           typeof deckProps.onClick === 'function'
             ? (deckProps.onClick as (info: unknown, event: unknown) => void)
             : null;
+        const upstreamOnHover =
+          typeof deckProps.onHover === 'function'
+            ? (deckProps.onHover as (info: unknown, event: unknown) => void)
+            : null;
         const layerIds = Array.isArray(deckProps.layers)
           ? deckProps.layers
               .map((layer) =>
@@ -143,10 +149,14 @@ function InternalKeplerMap({
             upstreamOnClick?.(info, event);
             onDeckClick?.(info, event);
           },
+          onHover: (info: unknown, event: unknown) => {
+            upstreamOnHover?.(info, event);
+            onDeckHover?.(info, event);
+          },
         };
       },
     }),
-    [onDeckClick, onDeckLayersResolved],
+    [onDeckClick, onDeckHover, onDeckLayersResolved],
   );
 
   const geoCoderPanelFields = (keplerState as any)?.visState
@@ -231,6 +241,7 @@ type KeplerMapContainerProps = {
   mapId: string;
   customLayers?: unknown[];
   onDeckClick?: (info: unknown, event: unknown) => void;
+  onDeckHover?: (info: unknown, event: unknown) => void;
   onDeckLayersResolved?: (layerIds: string[]) => void;
 };
 
@@ -238,6 +249,7 @@ export function KeplerMapContainer({
   mapId,
   customLayers,
   onDeckClick,
+  onDeckHover,
   onDeckLayersResolved,
 }: KeplerMapContainerProps) {
   return (
@@ -246,6 +258,7 @@ export function KeplerMapContainer({
         mapId={mapId}
         customLayers={customLayers}
         onDeckClick={onDeckClick}
+        onDeckHover={onDeckHover}
         onDeckLayersResolved={onDeckLayersResolved}
       />
     </KeplerProvider>

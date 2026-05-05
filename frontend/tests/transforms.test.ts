@@ -1,5 +1,10 @@
 // 這個檔案負責測試資料轉換是否正確切段、展平和保留時間資訊。
 import {flattenArcRows} from '../components/layers/odArcLayer/arcTransform';
+import {
+  FLOWMAP_COORD_PRECISION,
+  FLOWMAP_TIME_BUCKET_SECONDS,
+  transformRowsToFlowmapData,
+} from '../features/flowmap/flowmapTransform';
 import {segmentTripRows} from '../components/layers/tripsLayer/tripTransform';
 import {
   flattenHeatmapRows,
@@ -146,5 +151,94 @@ describe('transform helpers', () => {
 
   it('normalizes typed arrays into plain numeric arrays', () => {
     expect(normalizeNumericArray(new Float32Array([1, 2, 3]))).toEqual([1, 2, 3]);
+  });
+
+  it('aggregates flowmap rows by origin, destination, mode, and time bucket', () => {
+    const rows: QueryTrajectoryRow[] = [
+      {
+        agent_id: 3,
+        paths: [121.50001, 25.00001, 121.60001, 25.10001, 121.70001, 25.20001],
+        timestamps: [11_000, 11_020, 11_150],
+        modes: [2, 2, 2],
+      },
+      {
+        agent_id: 4,
+        paths: [121.50002, 25.00002, 121.60002, 25.10002],
+        timestamps: [11_030, 11_040],
+        modes: [2, 2],
+      },
+    ];
+
+    const data = transformRowsToFlowmapData(rows, [2], [10_900, 11_200]);
+
+    expect(data.locations).toEqual([
+      {id: '121.5,25', lon: 121.5, lat: 25},
+      {id: '121.6,25.1', lon: 121.6, lat: 25.1},
+      {id: '121.7,25.2', lon: 121.7, lat: 25.2},
+    ]);
+    expect(data.flows).toEqual([
+      {
+        id: '121.5,25->121.6,25.1:2:10980',
+        origin: '121.5,25',
+        dest: '121.6,25.1',
+        count: 2,
+        mode: 2,
+        modeLabel: 'Car',
+        timestamp: 10_980,
+        timestampMs: 1_704_078_180_000,
+        timeBucket: 10_980,
+      },
+      {
+        id: '121.6,25.1->121.7,25.2:2:10980',
+        origin: '121.6,25.1',
+        dest: '121.7,25.2',
+        count: 1,
+        mode: 2,
+        modeLabel: 'Car',
+        timestamp: 10_980,
+        timestampMs: 1_704_078_180_000,
+        timeBucket: 10_980,
+      },
+    ]);
+    expect(FLOWMAP_COORD_PRECISION).toBe(4);
+    expect(FLOWMAP_TIME_BUCKET_SECONDS).toBe(60);
+  });
+
+  it('keeps separate flowmap aggregates across modes and time buckets and skips self-loops', () => {
+    const rows: QueryTrajectoryRow[] = [
+      {
+        agent_id: 8,
+        paths: [121.45, 25.15, 121.46, 25.16, 121.47, 25.17, 121.47, 25.17],
+        timestamps: [12_000, 12_061, 12_120, 12_121],
+        modes: [1, 8, 8, 8],
+      },
+    ];
+
+    const data = transformRowsToFlowmapData(rows, [1, 8], [11_900, 12_200]);
+
+    expect(data.flows).toEqual([
+      {
+        id: '121.45,25.15->121.46,25.16:1:12000',
+        origin: '121.45,25.15',
+        dest: '121.46,25.16',
+        count: 1,
+        mode: 1,
+        modeLabel: 'Walk',
+        timestamp: 12_000,
+        timestampMs: 1_704_079_200_000,
+        timeBucket: 12_000,
+      },
+      {
+        id: '121.46,25.16->121.47,25.17:8:12060',
+        origin: '121.46,25.16',
+        dest: '121.47,25.17',
+        count: 1,
+        mode: 8,
+        modeLabel: 'Bus',
+        timestamp: 12_060,
+        timestampMs: 1_704_079_260_000,
+        timeBucket: 12_060,
+      },
+    ]);
   });
 });

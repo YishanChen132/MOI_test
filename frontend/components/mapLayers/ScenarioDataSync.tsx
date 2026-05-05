@@ -1,6 +1,6 @@
 // 這個檔案負責把資料同步流程串起來，讓地圖知道現在該查什麼、該顯示什麼。
 import {useSql} from '@sqlrooms/duckdb';
-import {useMemo, type MutableRefObject} from 'react';
+import {useEffect, useMemo, type MutableRefObject} from 'react';
 import {buildArcSourceQuery} from '../layers/odArcLayer/arcSql';
 import {buildTripSourceQuery} from '../layers/tripsLayer/tripSql';
 import {getPresetRoomDataSources} from '../../constants/datasets';
@@ -12,6 +12,10 @@ import {
   type ArcCacheEntry,
   type TripCacheEntry,
 } from './scenario/scenarioDataSyncHelpers';
+import {
+  buildPlaybackHistogramBinsFromArcRows,
+  buildPlaybackHistogramBinsFromTripRows,
+} from './scenario/scenarioCacheBuilders';
 import {useArcDataSync} from './scenario/useArcDataSync';
 import {useKeplerDatasetSync} from './scenario/useKeplerDatasetSync';
 import {useScenarioRunCompletion} from './scenario/useScenarioRunCompletion';
@@ -32,6 +36,7 @@ export function ScenarioDataSync({
   const applied = useRoomStore((state) => state.moi.applied);
   const completeRun = useRoomStore((state) => state.moi.completeRun);
   const layerOpacity = useRoomStore((state) => state.moi.layerOpacity);
+  const setPlaybackHistogramBins = useRoomStore((state) => state.moi.setPlaybackHistogramBins);
   const roomInitialized = useRoomStore((state) => state.room.initialized);
 
   const needsTripSource = applied.layers.trips || applied.layers.heatmap;
@@ -119,6 +124,49 @@ export function ScenarioDataSync({
     tripCacheRef,
     tripResult,
   });
+
+  useEffect(() => {
+    if (!activeSourcesReady || !hasSelectedModes) {
+      setPlaybackHistogramBins([]);
+      return;
+    }
+
+    if (applied.layers.arc && cachedArcEntry) {
+      setPlaybackHistogramBins(buildPlaybackHistogramBinsFromArcRows(cachedArcEntry.arcRows));
+      return;
+    }
+
+    if ((applied.layers.trips || applied.layers.heatmap) && cachedTripEntry) {
+      setPlaybackHistogramBins(
+        buildPlaybackHistogramBinsFromTripRows(cachedTripEntry.trajectoryRows, applied.modes),
+      );
+      return;
+    }
+
+    if (cachedArcEntry) {
+      setPlaybackHistogramBins(buildPlaybackHistogramBinsFromArcRows(cachedArcEntry.arcRows));
+      return;
+    }
+
+    if (cachedTripEntry) {
+      setPlaybackHistogramBins(
+        buildPlaybackHistogramBinsFromTripRows(cachedTripEntry.trajectoryRows, applied.modes),
+      );
+      return;
+    }
+
+    setPlaybackHistogramBins([]);
+  }, [
+    activeSourcesReady,
+    applied.layers.arc,
+    applied.layers.heatmap,
+    applied.layers.trips,
+    applied.modes,
+    cachedArcEntry,
+    cachedTripEntry,
+    hasSelectedModes,
+    setPlaybackHistogramBins,
+  ]);
 
   return null;
 }

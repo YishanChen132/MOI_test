@@ -47,6 +47,9 @@ export function createAppInitialState(): Pick<
   | 'benchmarks'
   | 'lastCounts'
   | 'selectedArcKey'
+  | 'flowmapEnabled'
+  | 'flowmapOpacity'
+  | 'selectedFlowId'
   | 'layerOpacity'
   | 'isPlaying'
   | 'tickStartTimestamp'
@@ -54,6 +57,7 @@ export function createAppInitialState(): Pick<
   | 'timeScale'
   | 'viewTimeRange'
   | 'displayTimeRange'
+  | 'playbackHistogramBins'
 > {
   return {
     draft: initialScenario,
@@ -64,6 +68,9 @@ export function createAppInitialState(): Pick<
     benchmarks: [],
     lastCounts: initialCounts,
     selectedArcKey: null,
+    flowmapEnabled: false,
+    flowmapOpacity: 0.7,
+    selectedFlowId: null,
     layerOpacity: DEFAULT_LAYER_OPACITY,
     isPlaying: false,
     tickStartTimestamp: null,
@@ -71,5 +78,6 @@ export function createAppInitialState(): Pick<
     timeScale: PLAYBACK_INITIAL_SPEED,
     viewTimeRange: [...PLAYBACK_DOMAIN],
     displayTimeRange: getInitialDisplayRange(),
+    playbackHistogramBins: [],
   };
 }

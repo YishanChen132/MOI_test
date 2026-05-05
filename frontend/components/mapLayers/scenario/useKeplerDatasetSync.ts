@@ -44,20 +44,15 @@ export function useKeplerDatasetSync({
       return;
     }
 
-    if (!activeSourcesReady) {
-      return;
-    }
-
     const arcCacheEntry = arcCacheRef.current.get(scenarioCacheKey) ?? null;
-    if (needsArcSource && !arcCacheEntry) {
-      return;
-    }
 
     replaceMapDatasets(
       roomStore,
       mapId,
       applied,
-      buildDatasetList(arcCacheEntry),
+      activeSourcesReady && (!needsArcSource || arcCacheEntry)
+        ? buildDatasetList(arcCacheEntry)
+        : [],
       layerOpacity,
     );
   }, [

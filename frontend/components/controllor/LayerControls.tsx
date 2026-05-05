@@ -26,17 +26,25 @@ const LAYER_CONTROLS: Array<{
 export function LayerControls({
   layers,
   layerOpacity,
+  flowmapEnabled,
+  flowmapOpacity,
   layerSummary,
   enabledLayerCount,
   setLayerEnabled,
   setLayerOpacity,
+  setFlowmapEnabled,
+  setFlowmapOpacity,
 }: {
   layers: LayerVisibility;
   layerOpacity: LayerOpacity;
+  flowmapEnabled: boolean;
+  flowmapOpacity: number;
   layerSummary: string;
   enabledLayerCount: number;
   setLayerEnabled: (layerId: LayerId, enabled: boolean) => void;
   setLayerOpacity: (layerId: AdjustableLayerId, opacity: number) => void;
+  setFlowmapEnabled: (enabled: boolean) => void;
+  setFlowmapOpacity: (opacity: number) => void;
 }) {
   return (
     <div className="space-y-3">
@@ -69,6 +77,26 @@ export function LayerControls({
             <strong className="moi-layer-opacity-value">{Math.round(layerOpacity[layer.id] * 100)}%</strong>
           </div>
         ))}
+        <div className="moi-layer-control-row">
+          <label className="moi-layer-toggle">
+            <LayerVisibilityButton
+              checked={flowmapEnabled}
+              label="Toggle flowmap"
+              onToggle={() => setFlowmapEnabled(!flowmapEnabled)}
+            />
+            <span>Flowmap</span>
+          </label>
+          <Slider
+            className="moi-layer-slider"
+            disabled={!flowmapEnabled}
+            max={100}
+            min={0}
+            step={1}
+            value={[opacityToSliderValue(flowmapOpacity)]}
+            onValueChange={(value) => setFlowmapOpacity(sliderValueToOpacity(value[0] ?? 0))}
+          />
+          <strong className="moi-layer-opacity-value">{Math.round(flowmapOpacity * 100)}%</strong>
+        </div>
       </div>
     </div>
   );

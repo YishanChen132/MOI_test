@@ -18,13 +18,19 @@ export function ControlMenu() {
   const runStatus = useRoomStore((state) => state.moi.runStatus);
   const latestError = useRoomStore((state) => state.moi.benchmarks[0]?.errorMessage ?? null);
   const layerOpacity = useRoomStore((state) => state.moi.layerOpacity);
+  const flowmapEnabled = useRoomStore((state) => state.moi.flowmapEnabled);
+  const flowmapOpacity = useRoomStore((state) => state.moi.flowmapOpacity);
   const setLayerEnabled = useRoomStore((state) => state.moi.setLayerEnabled);
   const setLayerOpacity = useRoomStore((state) => state.moi.setLayerOpacity);
+  const setFlowmapEnabled = useRoomStore((state) => state.moi.setFlowmapEnabled);
+  const setFlowmapOpacity = useRoomStore((state) => state.moi.setFlowmapOpacity);
   const setModeEnabled = useRoomStore((state) => state.moi.setModeEnabled);
   const roomInitialized = useRoomStore((state) => state.room.initialized);
   const dataSourceStates = useRoomStore((state) => state.room.dataSourceStates);
-  const enabledLayerCount = countEnabledLayers(draft.layers);
-  const layerSummary = summarizeLayers(draft.layers);
+  const enabledLayerCount = countEnabledLayers(draft.layers, flowmapEnabled);
+  const layerSummary = flowmapEnabled
+    ? `${summarizeLayers(draft.layers)} + Flowmap`
+    : summarizeLayers(draft.layers);
 
   return (
     <div className="moi-control-shell flex h-full flex-col gap-4">
@@ -60,10 +66,14 @@ export function ControlMenu() {
           <LayerControls
             layers={draft.layers}
             layerOpacity={layerOpacity}
+            flowmapEnabled={flowmapEnabled}
+            flowmapOpacity={flowmapOpacity}
             layerSummary={layerSummary}
             enabledLayerCount={enabledLayerCount}
             setLayerEnabled={setLayerEnabled}
             setLayerOpacity={setLayerOpacity}
+            setFlowmapEnabled={setFlowmapEnabled}
+            setFlowmapOpacity={setFlowmapOpacity}
           />
           {latestError ? (
             <p className="mt-3 rounded-xl border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">

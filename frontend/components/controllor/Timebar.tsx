@@ -1,7 +1,7 @@
 // 這個檔案就是目前測試版的 Timebar，負責播放、倍速和底部時間窗拖曳。
 import {Button, Card} from '@sqlrooms/ui';
 import {Pause, Play} from 'lucide-react';
-import {useRef} from 'react';
+import {useMemo, useRef} from 'react';
 import {
   formatMillisecondsToClock,
   formatMillisecondsToHourMinute,
@@ -19,6 +19,7 @@ export function Timebar() {
   const timeRange = useRoomStore((state) => state.moi.applied.timeRange);
   const isPlaying = useRoomStore((state) => state.moi.isPlaying);
   const timeScale = useRoomStore((state) => state.moi.timeScale);
+  const playbackHistogramBins = useRoomStore((state) => state.moi.playbackHistogramBins);
   const startPlayback = useRoomStore((state) => state.moi.startPlayback);
   const pausePlayback = useRoomStore((state) => state.moi.pausePlayback);
   const seekPlaybackPosition = useRoomStore((state) => state.moi.seekPlaybackPosition);
@@ -32,6 +33,10 @@ export function Timebar() {
   const windowLeftPercent = ((timeRange[0] - viewTimeRange[0]) / domainSpan) * 100;
   const windowWidthPercent = ((timeRange[1] - timeRange[0]) / domainSpan) * 100;
   const playbackHeadPercent = ((timeRange[1] - viewTimeRange[0]) / domainSpan) * 100;
+  const maxHistogramCount = useMemo(
+    () => Math.max(1, ...playbackHistogramBins.map((bin) => bin.count)),
+    [playbackHistogramBins],
+  );
 
   const getValueFromClientX = (clientX: number) => {
     if (!trackRef.current) {
@@ -66,16 +71,17 @@ export function Timebar() {
       <div className="moi-playback-toolbar">
         <div className="moi-playback-controls">
           <Button
-            className="rounded-xl"
+            className="moi-playback-toggle rounded-full"
             onClick={() => (isPlaying ? pausePlayback() : startPlayback())}
             variant={isPlaying ? 'secondary' : 'default'}
           >
-            {isPlaying ? <Pause className="mr-2 h-4 w-4" /> : <Play className="mr-2 h-4 w-4" />}
-            {isPlaying ? 'Pause' : 'Play'}
+            {isPlaying ? <Pause className="moi-playback-toggle-icon h-4 w-4" /> : <Play className="moi-playback-toggle-icon h-4 w-4" />}
+            <span>{isPlaying ? 'Pause' : 'Play'}</span>
           </Button>
           <div className="moi-playback-speed-group">
             {[30, 60, 120, 240].map((speed) => (
               <Button
+                className={`moi-playback-speed-button${timeScale === speed ? ' is-active' : ''}`}
                 key={speed}
                 onClick={() => setPlaybackSpeed(speed)}
                 size="sm"
@@ -122,6 +128,28 @@ export function Timebar() {
           }
         }}
       >
+        <div className="moi-playback-histogram" aria-hidden="true">
+          {playbackHistogramBins.map((bin) => {
+            const left = ((bin.startMs - viewTimeRange[0]) / domainSpan) * 100;
+            const width = ((bin.endMs - bin.startMs) / domainSpan) * 100;
+            const height = bin.count > 0
+              ? Math.max(8, (bin.count / maxHistogramCount) * 100)
+              : 0;
+
+            return (
+              <span
+                key={`${bin.startMs}-${bin.endMs}`}
+                className="moi-playback-histogram-bar"
+                style={{
+                  left: `${left}%`,
+                  width: `max(2px, calc(${width}% - 1px))`,
+                  height: `${height}%`,
+                }}
+              />
+            );
+          })}
+        </div>
+
         <div className="moi-playback-track-rail" />
 
         <div
