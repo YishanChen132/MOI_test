@@ -12,8 +12,20 @@ export function buildModeOverlapCondition(column: string, modes: readonly number
   return `(${modes.map((mode) => `list_contains(${column}, ${mode})`).join(' OR ')})`;
 }
 
+export function buildScalarModeCondition(column: string, modes: readonly number[]): string {
+  if (!modes.length) {
+    return 'FALSE';
+  }
+
+  return `${column} IN (${modes.join(', ')})`;
+}
+
 export function buildTimeOverlapCondition(column: string, start: number, end: number): string {
   return `list_max(${column}) >= ${start} AND list_min(${column}) <= ${end}`;
+}
+
+export function buildScalarTimeRangeCondition(column: string, start: number, end: number): string {
+  return `${column} >= ${start} AND ${column} <= ${end}`;
 }
 
 export function buildLimitClause(limit?: number): string {

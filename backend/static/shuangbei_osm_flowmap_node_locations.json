@@ -1,0 +1,14 @@
+[
+  {"node_id": "tw-node-001", "lon": 121.513, "lat": 25.0469, "pass_count": 17, "in_flow": 0, "out_flow": 17},
+  {"node_id": "tw-node-002", "lon": 121.5158, "lat": 25.0487, "pass_count": 22, "in_flow": 12, "out_flow": 10},
+  {"node_id": "tw-node-003", "lon": 121.5189, "lat": 25.0502, "pass_count": 17, "in_flow": 10, "out_flow": 7},
+  {"node_id": "tw-node-004", "lon": 121.5218, "lat": 25.0519, "pass_count": 7, "in_flow": 7, "out_flow": 0},
+  {"node_id": "tw-node-005", "lon": 121.5133, "lat": 25.0462, "pass_count": 5, "in_flow": 0, "out_flow": 5},
+  {"node_id": "tw-node-006", "lon": 121.5114, "lat": 25.0428, "pass_count": 9, "in_flow": 5, "out_flow": 4},
+  {"node_id": "tw-node-007", "lon": 121.5098, "lat": 25.0414, "pass_count": 4, "in_flow": 4, "out_flow": 0},
+  {"node_id": "nt-node-101", "lon": 121.4585, "lat": 25.0126, "pass_count": 6, "in_flow": 0, "out_flow": 6},
+  {"node_id": "nt-node-102", "lon": 121.4638, "lat": 25.0138, "pass_count": 12, "in_flow": 6, "out_flow": 6},
+  {"node_id": "nt-node-103", "lon": 121.4714, "lat": 25.0158, "pass_count": 6, "in_flow": 6, "out_flow": 0},
+  {"node_id": "nt-node-104", "lon": 121.5338, "lat": 24.9744, "pass_count": 3, "in_flow": 0, "out_flow": 3},
+  {"node_id": "nt-node-105", "lon": 121.5405, "lat": 24.9699, "pass_count": 3, "in_flow": 3, "out_flow": 0}
+]

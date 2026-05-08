@@ -1,0 +1,22 @@
+[
+  {
+    "od_id": "od-1",
+    "origin_lon": 121.5002,
+    "origin_lat": 25.0401,
+    "dest_lon": 121.5148,
+    "dest_lat": 25.0499,
+    "mode": 2,
+    "time_bucket": 9000,
+    "flow_count": 10
+  },
+  {
+    "od_id": "od-2",
+    "origin_lon": 121.5001,
+    "origin_lat": 25.0400,
+    "dest_lon": 121.5102,
+    "dest_lat": 25.0452,
+    "mode": 8,
+    "time_bucket": 9060,
+    "flow_count": 4
+  }
+]

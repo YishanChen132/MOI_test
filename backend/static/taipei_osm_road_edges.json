@@ -1,0 +1,37 @@
+[
+  {
+    "edge_id": "tw-edge-001",
+    "u": "tw-node-001",
+    "v": "tw-node-002",
+    "geometry": [[121.513, 25.0469], [121.5142, 25.0478], [121.5158, 25.0487]],
+    "road_class": "primary"
+  },
+  {
+    "edge_id": "tw-edge-002",
+    "u": "tw-node-002",
+    "v": "tw-node-003",
+    "geometry": [[121.5158, 25.0487], [121.5171, 25.0493], [121.5189, 25.0502]],
+    "road_class": "primary"
+  },
+  {
+    "edge_id": "tw-edge-003",
+    "u": "tw-node-003",
+    "v": "tw-node-004",
+    "geometry": [[121.5189, 25.0502], [121.5205, 25.051], [121.5218, 25.0519]],
+    "road_class": "secondary"
+  },
+  {
+    "edge_id": "tw-edge-004",
+    "u": "tw-node-005",
+    "v": "tw-node-006",
+    "geometry": [[121.5133, 25.0462], [121.5124, 25.0441], [121.5114, 25.0428]],
+    "road_class": "secondary"
+  },
+  {
+    "edge_id": "tw-edge-005",
+    "u": "tw-node-006",
+    "v": "tw-node-007",
+    "geometry": [[121.5114, 25.0428], [121.5106, 25.042], [121.5098, 25.0414]],
+    "road_class": "residential"
+  }
+]

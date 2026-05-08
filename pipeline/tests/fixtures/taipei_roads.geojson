@@ -1,0 +1,65 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "highway": "primary",
+        "oneway": false,
+        "maxspeed": 50
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [121.5000, 25.0400],
+          [121.5050, 25.0400]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "highway": "secondary",
+        "oneway": false,
+        "maxspeed": 40
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [121.5050, 25.0400],
+          [121.5100, 25.0450]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "highway": "secondary",
+        "oneway": false,
+        "maxspeed": 40
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [121.5100, 25.0450],
+          [121.5150, 25.0500]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "highway": "residential",
+        "oneway": false,
+        "maxspeed": 25
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [121.5050, 25.0400],
+          [121.5050, 25.0450]
+        ]
+      }
+    }
+  ]
+}

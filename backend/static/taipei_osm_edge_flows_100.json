@@ -1,0 +1,8 @@
+[
+  {"edge_id": "tw-edge-001", "time_bucket": 9000, "mode": 2, "flow_count": 3},
+  {"edge_id": "tw-edge-002", "time_bucket": 9000, "mode": 2, "flow_count": 2},
+  {"edge_id": "tw-edge-003", "time_bucket": 9000, "mode": 2, "flow_count": 1},
+  {"edge_id": "tw-edge-001", "time_bucket": 9060, "mode": 8, "flow_count": 1},
+  {"edge_id": "tw-edge-004", "time_bucket": 9060, "mode": 8, "flow_count": 1},
+  {"edge_id": "tw-edge-005", "time_bucket": 9060, "mode": 8, "flow_count": 1}
+]

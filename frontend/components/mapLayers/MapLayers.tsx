@@ -1,6 +1,6 @@
 // 這個檔案就是目前地圖主畫面，負責把 kepler 地圖、資料同步、heatmap customLayers 和播放循環組起來。
 import {Card} from '@sqlrooms/ui';
-import {useCallback, useRef} from 'react';
+import {useCallback} from 'react';
 import {PlaybackLoop} from './PlaybackLoop';
 import {ScenarioDataSync} from './ScenarioDataSync';
 import {KeplerMapContainer} from './KeplerMapContainer';
@@ -10,15 +10,15 @@ import {useArcCustomLayers} from '../layers/odArcLayer/useArcCustomLayers';
 import {useTripCustomLayers} from '../layers/tripsLayer/useTripCustomLayers';
 import {useRoomStore} from '../../app/store';
 import {useFlowmapLayer} from '../../features/flowmap/useFlowmapLayer';
-import type {
-  ArcCacheEntry,
-  TripCacheEntry,
+import {
+  sharedArcCacheRef,
+  sharedTripCacheRef,
 } from './scenario/scenarioDataSyncHelpers';
 
 export function MapLayers() {
   const currentMapId = useRoomStore((state) => state.kepler.config.currentMapId);
-  const tripCacheRef = useRef(new Map<string, TripCacheEntry>());
-  const arcCacheRef = useRef(new Map<string, ArcCacheEntry>());
+  const tripCacheRef = sharedTripCacheRef;
+  const arcCacheRef = sharedArcCacheRef;
   const {layers: heatmapCustomLayers} = useHeatmapCustomLayers(tripCacheRef);
   const {layers: tripCustomLayers} = useTripCustomLayers(tripCacheRef);
   const {layers: boundaryCustomLayers} = useBoundaryCustomLayers();
@@ -69,9 +69,10 @@ export function MapLayers() {
               top: hoveredFlowTooltip.y + 14,
             }}
           >
-            <div className="font-medium text-slate-100">
-              {`${hoveredFlowTooltip.originLabel} -> ${hoveredFlowTooltip.destLabel}`}
-            </div>
+            <div className="font-medium text-slate-100">{hoveredFlowTooltip.title}</div>
+            {hoveredFlowTooltip.subtitle ? (
+              <div className="mt-1 text-[11px] text-slate-300">{hoveredFlowTooltip.subtitle}</div>
+            ) : null}
             <div className="font-medium text-slate-100">
               {hoveredFlowTooltip.count} 條
             </div>

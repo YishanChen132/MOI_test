@@ -1,0 +1,9 @@
+[
+  {"node_id": "tw-node-001", "lon": 121.513, "lat": 25.0469},
+  {"node_id": "tw-node-002", "lon": 121.5158, "lat": 25.0487},
+  {"node_id": "tw-node-003", "lon": 121.5189, "lat": 25.0502},
+  {"node_id": "tw-node-004", "lon": 121.5218, "lat": 25.0519},
+  {"node_id": "tw-node-005", "lon": 121.5133, "lat": 25.0462},
+  {"node_id": "tw-node-006", "lon": 121.5114, "lat": 25.0428},
+  {"node_id": "tw-node-007", "lon": 121.5098, "lat": 25.0414}
+]

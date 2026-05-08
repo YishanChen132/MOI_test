@@ -1,0 +1,98 @@
+[
+  {
+    "origin_node_id": "tw-node-001",
+    "origin_lon": 121.513,
+    "origin_lat": 25.0469,
+    "dest_node_id": "tw-node-002",
+    "dest_lon": 121.5158,
+    "dest_lat": 25.0487,
+    "mode": 2,
+    "time_bucket": 9000,
+    "count": 12,
+    "route_count": 2
+  },
+  {
+    "origin_node_id": "tw-node-002",
+    "origin_lon": 121.5158,
+    "origin_lat": 25.0487,
+    "dest_node_id": "tw-node-003",
+    "dest_lon": 121.5189,
+    "dest_lat": 25.0502,
+    "mode": 2,
+    "time_bucket": 9000,
+    "count": 10,
+    "route_count": 2
+  },
+  {
+    "origin_node_id": "tw-node-003",
+    "origin_lon": 121.5189,
+    "origin_lat": 25.0502,
+    "dest_node_id": "tw-node-004",
+    "dest_lon": 121.5218,
+    "dest_lat": 25.0519,
+    "mode": 2,
+    "time_bucket": 9000,
+    "count": 7,
+    "route_count": 1
+  },
+  {
+    "origin_node_id": "tw-node-005",
+    "origin_lon": 121.5133,
+    "origin_lat": 25.0462,
+    "dest_node_id": "tw-node-006",
+    "dest_lon": 121.5114,
+    "dest_lat": 25.0428,
+    "mode": 8,
+    "time_bucket": 9060,
+    "count": 5,
+    "route_count": 1
+  },
+  {
+    "origin_node_id": "tw-node-006",
+    "origin_lon": 121.5114,
+    "origin_lat": 25.0428,
+    "dest_node_id": "tw-node-007",
+    "dest_lon": 121.5098,
+    "dest_lat": 25.0414,
+    "mode": 8,
+    "time_bucket": 9060,
+    "count": 4,
+    "route_count": 1
+  },
+  {
+    "origin_node_id": "nt-node-101",
+    "origin_lon": 121.4585,
+    "origin_lat": 25.0126,
+    "dest_node_id": "nt-node-102",
+    "dest_lon": 121.4638,
+    "dest_lat": 25.0138,
+    "mode": 2,
+    "time_bucket": 9120,
+    "count": 6,
+    "route_count": 1
+  },
+  {
+    "origin_node_id": "nt-node-102",
+    "origin_lon": 121.4638,
+    "origin_lat": 25.0138,
+    "dest_node_id": "nt-node-103",
+    "dest_lon": 121.4714,
+    "dest_lat": 25.0158,
+    "mode": 2,
+    "time_bucket": 9120,
+    "count": 6,
+    "route_count": 1
+  },
+  {
+    "origin_node_id": "nt-node-104",
+    "origin_lon": 121.5338,
+    "origin_lat": 24.9744,
+    "dest_node_id": "nt-node-105",
+    "dest_lon": 121.5405,
+    "dest_lat": 24.9699,
+    "mode": 8,
+    "time_bucket": 9180,
+    "count": 3,
+    "route_count": 1
+  }
+]

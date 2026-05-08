@@ -1,0 +1,46 @@
+[
+  {
+    "origin_edge_id": "tw-edge-001",
+    "origin_lon": 121.5142,
+    "origin_lat": 25.0478,
+    "dest_edge_id": "tw-edge-002",
+    "dest_lon": 121.5171,
+    "dest_lat": 25.0493,
+    "mode": 2,
+    "time_bucket": 9000,
+    "count": 12
+  },
+  {
+    "origin_edge_id": "tw-edge-002",
+    "origin_lon": 121.5171,
+    "origin_lat": 25.0493,
+    "dest_edge_id": "tw-edge-003",
+    "dest_lon": 121.5218,
+    "dest_lat": 25.0519,
+    "mode": 2,
+    "time_bucket": 9000,
+    "count": 10
+  },
+  {
+    "origin_edge_id": "tw-edge-001",
+    "origin_lon": 121.5142,
+    "origin_lat": 25.0478,
+    "dest_edge_id": "tw-edge-004",
+    "dest_lon": 121.5124,
+    "dest_lat": 25.0441,
+    "mode": 8,
+    "time_bucket": 9060,
+    "count": 5
+  },
+  {
+    "origin_edge_id": "tw-edge-004",
+    "origin_lon": 121.5124,
+    "origin_lat": 25.0441,
+    "dest_edge_id": "tw-edge-005",
+    "dest_lon": 121.5098,
+    "dest_lat": 25.0414,
+    "mode": 8,
+    "time_bucket": 9060,
+    "count": 4
+  }
+]

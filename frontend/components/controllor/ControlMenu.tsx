@@ -30,7 +30,7 @@ export function ControlMenu() {
   const enabledLayerCount = countEnabledLayers(draft.layers, flowmapEnabled);
   const layerSummary = flowmapEnabled
     ? `${summarizeLayers(draft.layers)} + Flowmap`
-    : summarizeLayers(draft.layers);
+    : `${summarizeLayers(draft.layers)}`;
 
   return (
     <div className="moi-control-shell flex h-full flex-col gap-4">

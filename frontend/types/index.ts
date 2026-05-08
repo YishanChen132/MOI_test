@@ -54,6 +54,35 @@ export type QueryTrajectoryRow = {
   modes: unknown;
 };
 
+export type QueryRoadFlowRow = {
+  id: string;
+  edge_id: string;
+  geometry: unknown;
+  road_class: string;
+  source_node_id: string;
+  source_lon: number;
+  source_lat: number;
+  target_node_id: string;
+  target_lon: number;
+  target_lat: number;
+  mode: number;
+  time_bucket: number;
+  flow_count: number;
+};
+
+export type QueryRoadNodeTransitionRow = {
+  origin_id: string;
+  origin_lon: number;
+  origin_lat: number;
+  dest_id: string;
+  dest_lon: number;
+  dest_lat: number;
+  mode: number;
+  time_bucket: number;
+  count: number;
+  route_count: number;
+};
+
 export type TripFeatureProperties = {
   agent_id: number;
   segment_index: number;

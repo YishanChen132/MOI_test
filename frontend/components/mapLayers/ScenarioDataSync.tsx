@@ -3,7 +3,7 @@ import {useSql} from '@sqlrooms/duckdb';
 import {useEffect, useMemo, type MutableRefObject} from 'react';
 import {buildArcSourceQuery} from '../layers/odArcLayer/arcSql';
 import {buildTripSourceQuery} from '../layers/tripsLayer/tripSql';
-import {getPresetRoomDataSources} from '../../constants/datasets';
+import {getDatasetPreset, getPresetRoomDataSources} from '../../constants/datasets';
 import {millisecondsRangeToSeconds, PLAYBACK_DOMAIN} from '../../lib/timeplayback';
 import type {QueryTrajectoryRow} from '../../types';
 import {useRoomStore} from '../../app/store';
@@ -35,11 +35,14 @@ export function ScenarioDataSync({
 }: ScenarioDataSyncProps) {
   const applied = useRoomStore((state) => state.moi.applied);
   const completeRun = useRoomStore((state) => state.moi.completeRun);
+  const flowmapEnabled = useRoomStore((state) => state.moi.flowmapEnabled);
   const layerOpacity = useRoomStore((state) => state.moi.layerOpacity);
   const setPlaybackHistogramBins = useRoomStore((state) => state.moi.setPlaybackHistogramBins);
   const roomInitialized = useRoomStore((state) => state.room.initialized);
+  const preset = getDatasetPreset(applied.datasetId);
 
-  const needsTripSource = applied.layers.trips || applied.layers.heatmap;
+  const needsTrajectoryFlowmapSource = flowmapEnabled && preset.flowmapSourceType === 'trajectory';
+  const needsTripSource = applied.layers.trips || applied.layers.heatmap || needsTrajectoryFlowmapSource;
   const needsArcSource = applied.layers.arc;
   const hasSelectedModes = applied.modes.length > 0;
   const scenarioCacheKey = useMemo(

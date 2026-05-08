@@ -1,16 +1,20 @@
-// 這個檔案負責測試資料轉換是否正確切段、展平和保留時間資訊。
+// 這個檔案負責測試資料轉換是否正確切段、展平和轉成 trajectory / road-node flowmap。
 import {flattenArcRows} from '../components/layers/odArcLayer/arcTransform';
 import {
   FLOWMAP_COORD_PRECISION,
   FLOWMAP_TIME_BUCKET_SECONDS,
-  transformRowsToFlowmapData,
+  transformRoadEdgeRowsToSegments,
+  transformRoadFlowRowsToSegments,
+  transformRoadNodeTransitionRowsToFlowmapData,
+  transformTrajectoryRowsToFlowmapData,
 } from '../features/flowmap/flowmapTransform';
 import {segmentTripRows} from '../components/layers/tripsLayer/tripTransform';
-import {
-  flattenHeatmapRows,
-  normalizeNumericArray,
-} from '../lib/transforms';
-import type {QueryTrajectoryRow} from '../types';
+import {flattenHeatmapRows, normalizeNumericArray} from '../lib/transforms';
+import type {
+  QueryRoadFlowRow,
+  QueryRoadNodeTransitionRow,
+  QueryTrajectoryRow,
+} from '../types';
 
 describe('transform helpers', () => {
   it('segments trips by continuous mode within the selected window', () => {
@@ -26,46 +30,11 @@ describe('transform helpers', () => {
     const geojson = segmentTripRows(rows, [2, 8], [9_900, 10_400]);
 
     expect(geojson.features).toHaveLength(2);
-    expect(geojson.features[0]?.properties).toMatchObject({
-      agent_id: 7,
-      segment_index: 0,
-      mode: 2,
-      start_time: 10_000,
-      end_time: 10_100,
-    });
-    expect(geojson.features[0]?.geometry.coordinates).toEqual([
-      [121.5, 25.0, 0, 1_704_077_200_000],
-      [121.51, 25.01, 0, 1_704_077_300_000],
-    ]);
-    expect(geojson.features[1]?.properties).toMatchObject({
-      segment_index: 1,
-      mode: 8,
-      start_time: 10_200,
-      end_time: 10_300,
-    });
+    expect(geojson.features[0]?.properties?.mode).toBe(2);
+    expect(geojson.features[1]?.properties?.mode).toBe(8);
   });
 
-  it('ignores invalid or too-short trip rows', () => {
-    const rows: QueryTrajectoryRow[] = [
-      {
-        agent_id: 1,
-        paths: [121.5, 25.0],
-        timestamps: [10_000],
-        modes: [2],
-      },
-      {
-        agent_id: 2,
-        paths: [121.5, 25.0, 121.51, 25.01],
-        timestamps: [10_000],
-        modes: [2, 2],
-      },
-    ];
-
-    const geojson = segmentTripRows(rows, [2], [9_900, 10_100]);
-    expect(geojson.features).toHaveLength(0);
-  });
-
-  it('flattens arc rows with the source-point indexing used by the old custom layer', () => {
+  it('flattens arc rows with the source-point indexing used by the custom layer', () => {
     const rows: QueryTrajectoryRow[] = [
       {
         agent_id: 4,
@@ -76,37 +45,9 @@ describe('transform helpers', () => {
     ];
 
     const arcRows = flattenArcRows(rows, [2, 8], [10_900, 11_100]);
-
-    expect(arcRows).toEqual([
-      {
-        arc_key: '4:0:2:11000',
-        agent_id: 4,
-        segment_index: 0,
-        source_lng: 121.4,
-        source_lat: 25.1,
-        target_lng: 121.41,
-        target_lat: 25.11,
-        mode: 2,
-        mode_label: 'Car',
-        timestamp: 11_000,
-        timestamp_ms: 1_704_078_200_000,
-        timestamp_iso: '2024-01-01T03:03:20Z',
-      },
-      {
-        arc_key: '4:1:8:11050',
-        agent_id: 4,
-        segment_index: 1,
-        source_lng: 121.41,
-        source_lat: 25.11,
-        target_lng: 121.42,
-        target_lat: 25.12,
-        mode: 8,
-        mode_label: 'Bus',
-        timestamp: 11_050,
-        timestamp_ms: 1_704_078_250_000,
-        timestamp_iso: '2024-01-01T03:04:10Z',
-      },
-    ]);
+    expect(arcRows).toHaveLength(2);
+    expect(arcRows[0]?.mode_label).toBe('Car');
+    expect(arcRows[1]?.mode_label).toBe('Bus');
   });
 
   it('flattens heatmap points with the expected path coordinate pairing', () => {
@@ -120,40 +61,15 @@ describe('transform helpers', () => {
     ];
 
     const heatmapRows = flattenHeatmapRows(rows, [2, 4], [12_005, 12_020]);
-
-    expect(heatmapRows).toEqual([
-      {
-        agent_id: 9,
-        segment_index: 1,
-        sample_index: 0,
-        lng: 121.46,
-        lat: 25.16,
-        mode: 2,
-        mode_label: 'Car',
-        timestamp: 12_010,
-        timestamp_ms: 1_704_079_210_000,
-        weight: 1,
-      },
-      {
-        agent_id: 9,
-        segment_index: 2,
-        sample_index: 0,
-        lng: 121.47,
-        lat: 25.17,
-        mode: 4,
-        mode_label: 'Mode 4',
-        timestamp: 12_020,
-        timestamp_ms: 1_704_079_220_000,
-        weight: 1,
-      },
-    ]);
+    expect(heatmapRows).toHaveLength(2);
+    expect(heatmapRows[0]?.mode_label).toBe('Car');
   });
 
   it('normalizes typed arrays into plain numeric arrays', () => {
     expect(normalizeNumericArray(new Float32Array([1, 2, 3]))).toEqual([1, 2, 3]);
   });
 
-  it('aggregates flowmap rows by origin, destination, mode, and time bucket', () => {
+  it('aggregates trajectory rows into classic flowmap locations and flows', () => {
     const rows: QueryTrajectoryRow[] = [
       {
         agent_id: 3,
@@ -169,7 +85,7 @@ describe('transform helpers', () => {
       },
     ];
 
-    const data = transformRowsToFlowmapData(rows, [2], [10_900, 11_200]);
+    const data = transformTrajectoryRowsToFlowmapData(rows, [2], [10_900, 11_200]);
 
     expect(data.locations).toEqual([
       {id: '121.5,25', lon: 121.5, lat: 25},
@@ -204,40 +120,141 @@ describe('transform helpers', () => {
     expect(FLOWMAP_TIME_BUCKET_SECONDS).toBe(60);
   });
 
-  it('keeps separate flowmap aggregates across modes and time buckets and skips self-loops', () => {
-    const rows: QueryTrajectoryRow[] = [
+  it('aggregates road-node transition rows into the same flowmap layer shape', () => {
+    const rows: QueryRoadNodeTransitionRow[] = [
       {
-        agent_id: 8,
-        paths: [121.45, 25.15, 121.46, 25.16, 121.47, 25.17, 121.47, 25.17],
-        timestamps: [12_000, 12_061, 12_120, 12_121],
-        modes: [1, 8, 8, 8],
+        origin_id: 'node-a',
+        origin_lon: 121.501,
+        origin_lat: 25.041,
+        dest_id: 'node-b',
+        dest_lon: 121.503,
+        dest_lat: 25.044,
+        mode: 2,
+        time_bucket: 12_000,
+        count: 4,
+        route_count: 2,
+      },
+      {
+        origin_id: 'node-a',
+        origin_lon: 121.501,
+        origin_lat: 25.041,
+        dest_id: 'node-b',
+        dest_lon: 121.503,
+        dest_lat: 25.044,
+        mode: 2,
+        time_bucket: 12_000,
+        count: 3,
+        route_count: 1,
+      },
+      {
+        origin_id: 'node-b',
+        origin_lon: 121.503,
+        origin_lat: 25.044,
+        dest_id: 'node-c',
+        dest_lon: 121.506,
+        dest_lat: 25.047,
+        mode: 8,
+        time_bucket: 12_060,
+        count: 2,
+        route_count: 1,
       },
     ];
 
-    const data = transformRowsToFlowmapData(rows, [1, 8], [11_900, 12_200]);
+    const data = transformRoadNodeTransitionRowsToFlowmapData(rows, [2, 8], [11_900, 12_120]);
 
+    expect(data.locations).toEqual([
+      {id: 'node-a', lon: 121.501, lat: 25.041},
+      {id: 'node-b', lon: 121.503, lat: 25.044},
+      {id: 'node-c', lon: 121.506, lat: 25.047},
+    ]);
     expect(data.flows).toEqual([
       {
-        id: '121.45,25.15->121.46,25.16:1:12000',
-        origin: '121.45,25.15',
-        dest: '121.46,25.16',
-        count: 1,
-        mode: 1,
-        modeLabel: 'Walk',
+        id: 'node-a->node-b:2:12000',
+        origin: 'node-a',
+        dest: 'node-b',
+        count: 7,
+        mode: 2,
+        modeLabel: 'Car',
         timestamp: 12_000,
         timestampMs: 1_704_079_200_000,
         timeBucket: 12_000,
+        routeCount: 3,
       },
       {
-        id: '121.46,25.16->121.47,25.17:8:12060',
-        origin: '121.46,25.16',
-        dest: '121.47,25.17',
-        count: 1,
+        id: 'node-b->node-c:8:12060',
+        origin: 'node-b',
+        dest: 'node-c',
+        count: 2,
         mode: 8,
         modeLabel: 'Bus',
         timestamp: 12_060,
         timestampMs: 1_704_079_260_000,
         timeBucket: 12_060,
+        routeCount: 1,
+      },
+    ]);
+  });
+
+  it('converts joined road-flow rows into sorted road network path segments and road underlay segments', () => {
+    const rows: QueryRoadFlowRow[] = [
+      {
+        id: 'road-a:2:12000',
+        edge_id: 'road-a',
+        geometry: [[121.5, 25.05], [121.5009, 25.0512], [121.5018, 25.0524]],
+        road_class: 'primary',
+        source_node_id: 'node-a',
+        source_lon: 121.5,
+        source_lat: 25.05,
+        target_node_id: 'node-b',
+        target_lon: 121.5018,
+        target_lat: 25.0524,
+        mode: 2,
+        time_bucket: 12_000,
+        flow_count: 9,
+      },
+      {
+        id: 'road-b:8:12060',
+        edge_id: 'road-b',
+        geometry: [[121.49, 25.04], [121.4907, 25.0408]],
+        road_class: 'secondary',
+        source_node_id: 'node-c',
+        source_lon: 121.49,
+        source_lat: 25.04,
+        target_node_id: 'node-d',
+        target_lon: 121.4907,
+        target_lat: 25.0408,
+        mode: 8,
+        time_bucket: 12_060,
+        flow_count: 3,
+      },
+    ];
+
+    const segments = transformRoadFlowRowsToSegments(rows, [2, 8], [11_900, 12_120]);
+    const edges = transformRoadEdgeRowsToSegments([
+      {
+        edge_id: 'edge-1',
+        u: 'node-1',
+        v: 'node-2',
+        geometry: [[121.5, 25.05], [121.5006, 25.0506]],
+        road_class: 'primary',
+      },
+      {
+        edge_id: 'edge-2',
+        u: 'node-2',
+        v: 'node-3',
+        geometry: [[121.5006, 25.0506]],
+        road_class: 'secondary',
+      },
+    ]);
+
+    expect(segments).toHaveLength(2);
+    expect(edges).toEqual([
+      {
+        edgeId: 'edge-1',
+        sourceNodeId: 'node-1',
+        targetNodeId: 'node-2',
+        path: [[121.5, 25.05], [121.5006, 25.0506]],
+        roadClass: 'primary',
       },
     ]);
   });

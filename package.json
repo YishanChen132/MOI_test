@@ -13,6 +13,12 @@
     "dev:backend": "npm --workspace backend run dev",
     "build": "npm --workspace frontend run build",
     "test": "npm --workspace frontend run test",
-    "lint": "npm --workspace frontend run lint"
+    "lint": "npm --workspace frontend run lint",
+    "test:pipeline": "python3 -m unittest discover -s pipeline/tests -p 'test_*.py'",
+    "pipeline:build-road-graph": "python3 -m pipeline.cli build-road-graph",
+    "pipeline:assign-od-to-routes": "python3 -m pipeline.cli assign-od-to-routes",
+    "pipeline:export-city2graph": "python3 -m pipeline.cli export-city2graph",
+    "pipeline:export-flowmap": "python3 -m pipeline.cli export-flowmap",
+    "pipeline:export-road-node-flowmap": "python3 -m pipeline.cli export-road-node-flowmap"
   }
 }

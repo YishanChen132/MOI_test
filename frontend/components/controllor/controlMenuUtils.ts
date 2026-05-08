@@ -21,7 +21,13 @@ export function countEnabledLayers(layers: {
   heatmap: boolean;
   boundary: boolean;
 }, flowmapEnabled = false): number {
-  return [layers.trips, layers.arc, layers.heatmap, layers.boundary, flowmapEnabled].filter(Boolean).length;
+  return [
+    layers.trips,
+    layers.arc,
+    layers.heatmap,
+    layers.boundary,
+    flowmapEnabled,
+  ].filter(Boolean).length;
 }
 
 export function getModeIcon(modeCode: number) {
