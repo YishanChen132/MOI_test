@@ -1,6 +1,7 @@
 // 這個檔案負責把 trip query 的 Arrow table 轉成原專案風格的 heatmap PathLayer customLayers。
 import {useMemo, type MutableRefObject} from 'react';
 import {useRoomStore} from '../../../app/store';
+import {usePlaybackLayerTimeRange} from '../../../app/usePlaybackRuntime';
 import {millisecondsRangeToSeconds} from '../../../lib/timeplayback';
 import {
   buildScenarioCacheKey,
@@ -25,6 +26,7 @@ export function useHeatmapCustomLayers(
   const applied = useRoomStore((state) => state.moi.applied);
   const runStatus = useRoomStore((state) => state.moi.runStatus);
   const heatmapOpacity = useRoomStore((state) => state.moi.layerOpacity.heatmap);
+  const playbackTimeRange = usePlaybackLayerTimeRange();
 
   const scenarioCacheKey = useMemo(
     () => buildScenarioCacheKey(applied.datasetId, applied.modes),
@@ -37,8 +39,8 @@ export function useHeatmapCustomLayers(
   );
 
   const timeRangeSeconds = useMemo(
-    () => millisecondsRangeToSeconds(applied.timeRange),
-    [applied.timeRange],
+    () => millisecondsRangeToSeconds(playbackTimeRange),
+    [playbackTimeRange],
   );
 
   return useMemo(() => {

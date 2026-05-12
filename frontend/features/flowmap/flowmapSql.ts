@@ -8,7 +8,10 @@ import {
 } from '../../lib/sql';
 import {millisecondsRangeToSeconds, PLAYBACK_DOMAIN} from '../../lib/timeplayback';
 import type {AppliedScenario} from '../../types';
-import {ROAD_NODE_TRANSITION_FLOWMAP_LIMIT} from './flowmapCache';
+import {
+  bucketFlowmapTimeRange,
+  ROAD_NODE_TRANSITION_FLOWMAP_LIMIT,
+} from './flowmapCache';
 
 export function buildFlowmapSourceQuery(applied: AppliedScenario): string {
   const preset = getDatasetPreset(applied.datasetId);
@@ -34,6 +37,7 @@ export function buildFlowmapSourceQuery(applied: AppliedScenario): string {
 
   if (preset.flowmapSourceType === 'road-node-transition' && preset.flowmapTable) {
     const table = quoteIdentifier(preset.flowmapTable);
+    const [bucketedStart, bucketedEnd] = bucketFlowmapTimeRange([timeStart, timeEnd]);
     return `
       SELECT
         origin_node_id AS origin_id,
@@ -48,7 +52,7 @@ export function buildFlowmapSourceQuery(applied: AppliedScenario): string {
         route_count
       FROM ${table}
       WHERE
-        ${buildScalarTimeRangeCondition('time_bucket', timeStart, timeEnd)}
+        ${buildScalarTimeRangeCondition('time_bucket', bucketedStart, bucketedEnd)}
         AND ${buildScalarModeCondition('mode', applied.modes)}
       ORDER BY count DESC, time_bucket, origin_node_id, dest_node_id
       LIMIT ${ROAD_NODE_TRANSITION_FLOWMAP_LIMIT}
@@ -64,6 +68,7 @@ export function buildRoadFlowSourceQuery(applied: AppliedScenario): string {
   const roadNetworkTable = quoteIdentifier(preset.roadNetworkTable ?? SHARED_ROAD_NETWORK_TABLE);
   const roadNodeTable = quoteIdentifier(preset.roadNodeTable ?? SHARED_ROAD_NODE_TABLE);
   const [start, end] = millisecondsRangeToSeconds(applied.timeRange);
+  const [bucketedStart, bucketedEnd] = bucketFlowmapTimeRange([start, end]);
 
   return `
     SELECT
@@ -88,7 +93,7 @@ export function buildRoadFlowSourceQuery(applied: AppliedScenario): string {
     JOIN ${roadNodeTable} AS target
       ON target.node_id = road.v
     WHERE
-      ${buildScalarTimeRangeCondition('flow.time_bucket', start, end)}
+      ${buildScalarTimeRangeCondition('flow.time_bucket', bucketedStart, bucketedEnd)}
       AND ${buildScalarModeCondition('flow.mode', applied.modes)}
     ORDER BY flow.time_bucket, flow.flow_count DESC, flow.edge_id
   `;

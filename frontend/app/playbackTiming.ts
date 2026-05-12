@@ -6,6 +6,7 @@ import type {TimeRangeMilliseconds} from '../types';
 import type {AppSliceState} from './appStoreTypes';
 
 const MIN_ACTIVE_WINDOW_MS = 60_000;
+export const APPLIED_PLAYBACK_SYNC_BUCKET_MS = 600_000;
 
 export function getActiveWindowWidth(
   timeRange: TimeRangeMilliseconds,
@@ -49,4 +50,26 @@ export function getPlaybackPosition(
     moi.displayTimeRange[0],
     Math.min(moi.accumulatedAmount + (now - moi.tickStartTimestamp) * moi.timeScale, moi.displayTimeRange[1]),
   );
+}
+
+export function bucketTimeRange(
+  [start, end]: TimeRangeMilliseconds,
+  bucketMs = APPLIED_PLAYBACK_SYNC_BUCKET_MS,
+): TimeRangeMilliseconds {
+  const safeBucketMs = Math.max(1, Math.floor(bucketMs));
+  const bucketedStart = Math.floor(start / safeBucketMs) * safeBucketMs;
+  const bucketedEnd = Math.ceil(end / safeBucketMs) * safeBucketMs;
+
+  return [bucketedStart, Math.max(bucketedStart, bucketedEnd)];
+}
+
+export function shouldSyncAppliedTimeRange(
+  currentAppliedRange: TimeRangeMilliseconds,
+  nextDraftRange: TimeRangeMilliseconds,
+  bucketMs = APPLIED_PLAYBACK_SYNC_BUCKET_MS,
+): boolean {
+  const [currentStart, currentEnd] = bucketTimeRange(currentAppliedRange, bucketMs);
+  const [nextStart, nextEnd] = bucketTimeRange(nextDraftRange, bucketMs);
+
+  return currentStart !== nextStart || currentEnd !== nextEnd;
 }

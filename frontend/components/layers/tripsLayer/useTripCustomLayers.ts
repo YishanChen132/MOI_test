@@ -2,6 +2,7 @@
 import {TripsLayer} from '@deck.gl/geo-layers';
 import {useMemo, type MutableRefObject} from 'react';
 import {useRoomStore} from '../../../app/store';
+import {usePlaybackLayerTimeRange} from '../../../app/usePlaybackRuntime';
 import {MODE_DEFINITIONS} from '../../../constants/modes';
 import {
   millisecondsRangeToSeconds,
@@ -43,6 +44,7 @@ export function useTripCustomLayers(
   const applied = useRoomStore((state) => state.moi.applied);
   const runStatus = useRoomStore((state) => state.moi.runStatus);
   const tripOpacity = useRoomStore((state) => state.moi.layerOpacity.trips);
+  const playbackTimeRange = usePlaybackLayerTimeRange();
 
   const scenarioCacheKey = useMemo(
     () => buildScenarioCacheKey(applied.datasetId, applied.modes),
@@ -89,14 +91,14 @@ export function useTripCustomLayers(
       return {layers: [] as unknown[]};
     }
 
-    const activeWindowMs = Math.max(0, applied.timeRange[1] - applied.timeRange[0]);
+    const activeWindowMs = Math.max(0, playbackTimeRange[1] - playbackTimeRange[0]);
 
     return {
       layers: [
         new TripsLayer<TripLayerDatum>({
           id: TRIP_LAYER_ID,
           data: tripRows,
-          currentTime: applied.timeRange[1],
+          currentTime: playbackTimeRange[1],
           fadeTrail: true,
           getColor: (row: TripLayerDatum) => modeTripColors.get(row.mode) ?? [255, 150, 150, 235],
           getPath: (row: TripLayerDatum) => row.path,
@@ -115,8 +117,8 @@ export function useTripCustomLayers(
     };
   }, [
     applied.layers.trips,
-    applied.timeRange,
     modeTripColors,
+    playbackTimeRange,
     tripOpacity,
     tripRows,
   ]);

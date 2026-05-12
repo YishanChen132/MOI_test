@@ -13,7 +13,7 @@ export const createAppSlice: StateCreator<RoomState, [], [], AppSliceState> = (s
     ...createAppInitialState(),
     ...createScenarioSlice(set, get),
     ...createMobilitySlice(set, get),
-    ...createPlaybackSlice(set),
+    ...createPlaybackSlice(set, get),
     ...createRunSlice(set, get),
   },
 });

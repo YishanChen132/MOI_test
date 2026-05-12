@@ -2,6 +2,7 @@
 import {useEffect} from 'react';
 import {syncPlaybackWindow} from '../../services/kepler';
 import {roomStore, useRoomStore} from '../../app/store';
+import {getPlaybackFrameSnapshot, subscribePlaybackFrame} from '../../app/playbackRuntime';
 
 type PlaybackLoopProps = {
   mapId: string;
@@ -10,15 +11,17 @@ type PlaybackLoopProps = {
 export function PlaybackLoop({mapId}: PlaybackLoopProps) {
   const isPlaying = useRoomStore((state) => state.moi.isPlaying);
   const tickPlayback = useRoomStore((state) => state.moi.tickPlayback);
-  const timeRange = useRoomStore((state) => state.moi.applied.timeRange);
 
   useEffect(() => {
     if (!mapId) {
       return;
     }
 
-    syncPlaybackWindow(roomStore, mapId, timeRange);
-  }, [mapId, timeRange]);
+    syncPlaybackWindow(roomStore, mapId, getPlaybackFrameSnapshot().timeRange);
+    return subscribePlaybackFrame(() => {
+      syncPlaybackWindow(roomStore, mapId, getPlaybackFrameSnapshot().timeRange);
+    });
+  }, [mapId]);
 
   useEffect(() => {
     if (!mapId || !isPlaying) {

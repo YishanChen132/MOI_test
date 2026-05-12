@@ -1,4 +1,5 @@
 import {
+  bucketFlowmapTimeRange,
   ROAD_NODE_TRANSITION_FLOWMAP_LIMIT,
   buildFlowmapCacheKey,
   buildFlowmapModeKey,
@@ -13,17 +14,18 @@ describe('flowmap cache helpers', () => {
 
   it('builds stable cache keys for the same dataset, source, modes, and time range', () => {
     const keyA = buildFlowmapCacheKey('2000', 'trajectory', [2, 8], [9_000, 9_600]);
-    const keyB = buildFlowmapCacheKey('2000', 'trajectory', [2, 8], [9_000, 9_600]);
+    const keyB = buildFlowmapCacheKey('2000', 'trajectory', [2, 8], [9_060, 9_599]);
 
     expect(keyA).toBe(keyB);
     expect(buildFlowmapModeKey([2, 8])).toBe('2,8');
     expect(buildFlowmapTimeRangeKey([9_000, 9_600])).toBe('9000:9600');
+    expect(bucketFlowmapTimeRange([9_060, 9_599])).toEqual([9_000, 9_600]);
   });
 
-  it('invalidates the cache key when mode filters or time windows change', () => {
+  it('invalidates the cache key when mode filters or coarse time buckets change', () => {
     const base = buildFlowmapCacheKey('taipei_road_node_flowmap', 'road-node-transition', [2, 8], [9_000, 9_600]);
     const differentModes = buildFlowmapCacheKey('taipei_road_node_flowmap', 'road-node-transition', [2], [9_000, 9_600]);
-    const differentTimeRange = buildFlowmapCacheKey('taipei_road_node_flowmap', 'road-node-transition', [2, 8], [9_060, 9_600]);
+    const differentTimeRange = buildFlowmapCacheKey('taipei_road_node_flowmap', 'road-node-transition', [2, 8], [9_601, 10_001]);
 
     expect(base).not.toBe(differentModes);
     expect(base).not.toBe(differentTimeRange);

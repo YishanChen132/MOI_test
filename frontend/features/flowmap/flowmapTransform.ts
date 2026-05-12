@@ -14,9 +14,10 @@ import type {
   FlowmapRoadEdge,
   FlowmapRoadSegment,
 } from './flowmapTypes';
+import {FLOWMAP_TIME_BUCKET_SECONDS as FLOWMAP_RENDER_TIME_BUCKET_SECONDS} from './flowmapCache';
 
 export const FLOWMAP_COORD_PRECISION = 4;
-export const FLOWMAP_TIME_BUCKET_SECONDS = 60;
+export const FLOWMAP_TIME_BUCKET_SECONDS = FLOWMAP_RENDER_TIME_BUCKET_SECONDS;
 
 function roundCoordinate(value: number, precision = FLOWMAP_COORD_PRECISION): number {
   const scale = 10 ** precision;
@@ -109,7 +110,7 @@ export function transformTrajectoryRowsToFlowmapData(
       upsertLocation(locationsById, originId, originLon, originLat);
       upsertLocation(locationsById, destId, destLon, destLat);
 
-      const timeBucket = Math.floor(timestamp / FLOWMAP_TIME_BUCKET_SECONDS) * FLOWMAP_TIME_BUCKET_SECONDS;
+      const timeBucket = Math.floor(timestamp / FLOWMAP_RENDER_TIME_BUCKET_SECONDS) * FLOWMAP_RENDER_TIME_BUCKET_SECONDS;
       const flowId = createFlowId(originId, destId, mode, timeBucket);
       const existing = flowsById.get(flowId);
       if (existing) {

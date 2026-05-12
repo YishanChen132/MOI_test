@@ -1,12 +1,13 @@
 // 這個檔案就是目前測試版的 Timebar，負責播放、倍速和底部時間窗拖曳。
 import {Button, Card} from '@sqlrooms/ui';
 import {Pause, Play} from 'lucide-react';
-import {useMemo, useRef} from 'react';
+import {useEffect, useMemo, useRef} from 'react';
 import {
   formatMillisecondsToClock,
   formatMillisecondsToHourMinute,
 } from '../../lib/format';
 import {useRoomStore} from '../../app/store';
+import {getPlaybackFrameSnapshot, subscribePlaybackFrame} from '../../app/playbackRuntime';
 
 type DragMode = 'seek' | 'window-start' | 'window-end' | null;
 
@@ -16,7 +17,7 @@ function clampPercent(value: number): number {
 
 export function Timebar() {
   const viewTimeRange = useRoomStore((state) => state.moi.viewTimeRange);
-  const timeRange = useRoomStore((state) => state.moi.applied.timeRange);
+  const timeRange = useRoomStore((state) => state.moi.draft.timeRange);
   const isPlaying = useRoomStore((state) => state.moi.isPlaying);
   const timeScale = useRoomStore((state) => state.moi.timeScale);
   const playbackHistogramBins = useRoomStore((state) => state.moi.playbackHistogramBins);
@@ -27,6 +28,13 @@ export function Timebar() {
   const setPlaybackSpeed = useRoomStore((state) => state.moi.setPlaybackSpeed);
   const trackRef = useRef<HTMLDivElement | null>(null);
   const dragModeRef = useRef<DragMode>(null);
+  const windowRef = useRef<HTMLDivElement | null>(null);
+  const startHandleRef = useRef<HTMLButtonElement | null>(null);
+  const endHandleRef = useRef<HTMLButtonElement | null>(null);
+  const headRef = useRef<HTMLDivElement | null>(null);
+  const readoutStartRef = useRef<HTMLElement | null>(null);
+  const readoutEndRef = useRef<HTMLElement | null>(null);
+  const captionRangeRef = useRef<HTMLElement | null>(null);
 
   // 這幾個不是寫死的 magic number，而是把目前時間窗換成播放條上的百分比位置。
   const domainSpan = viewTimeRange[1] - viewTimeRange[0];
@@ -37,6 +45,53 @@ export function Timebar() {
     () => Math.max(1, ...playbackHistogramBins.map((bin) => bin.count)),
     [playbackHistogramBins],
   );
+
+  useEffect(() => {
+    const updatePlaybackChrome = (nextTimeRange: typeof timeRange) => {
+      const nextDomainSpan = viewTimeRange[1] - viewTimeRange[0];
+      if (nextDomainSpan <= 0) {
+        return;
+      }
+
+      const nextWindowLeftPercent = ((nextTimeRange[0] - viewTimeRange[0]) / nextDomainSpan) * 100;
+      const nextWindowWidthPercent = ((nextTimeRange[1] - nextTimeRange[0]) / nextDomainSpan) * 100;
+      const nextPlaybackHeadPercent = ((nextTimeRange[1] - viewTimeRange[0]) / nextDomainSpan) * 100;
+
+      if (windowRef.current) {
+        windowRef.current.style.left = `${nextWindowLeftPercent}%`;
+        windowRef.current.style.width = `${nextWindowWidthPercent}%`;
+      }
+
+      if (startHandleRef.current) {
+        startHandleRef.current.style.left = `${nextWindowLeftPercent}%`;
+      }
+
+      if (endHandleRef.current) {
+        endHandleRef.current.style.left = `${nextWindowLeftPercent + nextWindowWidthPercent}%`;
+      }
+
+      if (headRef.current) {
+        headRef.current.style.left = `${nextPlaybackHeadPercent}%`;
+      }
+
+      if (readoutStartRef.current) {
+        readoutStartRef.current.textContent = formatMillisecondsToHourMinute(nextTimeRange[0]);
+      }
+
+      if (readoutEndRef.current) {
+        readoutEndRef.current.textContent = formatMillisecondsToHourMinute(nextTimeRange[1]);
+      }
+
+      if (captionRangeRef.current) {
+        captionRangeRef.current.textContent = `${formatMillisecondsToClock(nextTimeRange[0])} - ${formatMillisecondsToClock(nextTimeRange[1])}`;
+      }
+    };
+
+    updatePlaybackChrome(timeRange);
+    return subscribePlaybackFrame(() => {
+      updatePlaybackChrome(getPlaybackFrameSnapshot().timeRange);
+    });
+  }, [timeRange, viewTimeRange]);
 
   const getValueFromClientX = (clientX: number) => {
     if (!trackRef.current) {
@@ -93,9 +148,9 @@ export function Timebar() {
           </div>
         </div>
         <div className="moi-playback-readout">
-          <strong>{formatMillisecondsToHourMinute(timeRange[0])}</strong>
+          <strong ref={readoutStartRef}>{formatMillisecondsToHourMinute(timeRange[0])}</strong>
           <span>-</span>
-          <strong>{formatMillisecondsToHourMinute(timeRange[1])}</strong>
+          <strong ref={readoutEndRef}>{formatMillisecondsToHourMinute(timeRange[1])}</strong>
         </div>
       </div>
 
@@ -153,6 +208,7 @@ export function Timebar() {
         <div className="moi-playback-track-rail" />
 
         <div
+          ref={windowRef}
           className="moi-playback-window"
           style={{
             left: `${windowLeftPercent}%`,
@@ -161,6 +217,7 @@ export function Timebar() {
         />
 
         <button
+          ref={startHandleRef}
           aria-label="Adjust active window start"
           className="moi-playback-window-handle"
           style={{left: `${windowLeftPercent}%`}}
@@ -187,6 +244,7 @@ export function Timebar() {
         />
 
         <button
+          ref={endHandleRef}
           aria-label="Adjust active window end"
           className="moi-playback-window-handle"
           style={{left: `${windowLeftPercent + windowWidthPercent}%`}}
@@ -213,6 +271,7 @@ export function Timebar() {
         />
 
         <div
+          ref={headRef}
           className="moi-playback-head"
           style={{
             left: `${playbackHeadPercent}%`,
@@ -222,7 +281,7 @@ export function Timebar() {
 
       <div className="moi-playback-caption">
         <span>Active range</span>
-        <span>{formatMillisecondsToClock(timeRange[0])} - {formatMillisecondsToClock(timeRange[1])}</span>
+        <span ref={captionRangeRef}>{formatMillisecondsToClock(timeRange[0])} - {formatMillisecondsToClock(timeRange[1])}</span>
         <span>Speed x{timeScale}</span>
       </div>
 

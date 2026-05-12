@@ -3,6 +3,7 @@ import type {QueryRoadNodeTransitionRow} from '../../types';
 import type {FlowmapLayerData, FlowmapRoadSegment} from './flowmapTypes';
 
 export const ROAD_NODE_TRANSITION_FLOWMAP_LIMIT = 3_000;
+export const FLOWMAP_TIME_BUCKET_SECONDS = 600;
 
 type RoadNodeTransitionCacheEntry = {
   rows: QueryRoadNodeTransitionRow[];
@@ -17,8 +18,19 @@ export function buildFlowmapModeKey(modes: readonly number[]): string {
   return modes.join(',');
 }
 
+export function bucketFlowmapTimeRange(
+  timeRangeSeconds: readonly [number, number],
+): [number, number] {
+  const [start, end] = timeRangeSeconds;
+  const startBucket = Math.floor(start / FLOWMAP_TIME_BUCKET_SECONDS) * FLOWMAP_TIME_BUCKET_SECONDS;
+  const endBucket = Math.ceil(end / FLOWMAP_TIME_BUCKET_SECONDS) * FLOWMAP_TIME_BUCKET_SECONDS;
+
+  return [startBucket, Math.max(startBucket, endBucket)];
+}
+
 export function buildFlowmapTimeRangeKey(timeRangeSeconds: readonly [number, number]): string {
-  return `${timeRangeSeconds[0]}:${timeRangeSeconds[1]}`;
+  const [startBucket, endBucket] = bucketFlowmapTimeRange(timeRangeSeconds);
+  return `${startBucket}:${endBucket}`;
 }
 
 export function buildFlowmapCacheKey(

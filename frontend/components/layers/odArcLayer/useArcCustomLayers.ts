@@ -3,6 +3,7 @@ import {fitBounds} from '@kepler.gl/actions';
 import {ArcLayer} from '@deck.gl/layers';
 import {useCallback, useEffect, useMemo, useRef, type MutableRefObject} from 'react';
 import {roomStore, useRoomStore} from '../../../app/store';
+import {usePlaybackLayerTimeRange} from '../../../app/usePlaybackRuntime';
 import {MODE_DEFINITIONS} from '../../../constants/modes';
 import type {ArcDatum} from '../../../types';
 import {
@@ -73,6 +74,7 @@ export function useArcCustomLayers(
   const applied = useRoomStore((state) => state.moi.applied);
   const runStatus = useRoomStore((state) => state.moi.runStatus);
   const arcOpacity = useRoomStore((state) => state.moi.layerOpacity.arc);
+  const playbackTimeRange = usePlaybackLayerTimeRange();
   const selectedArcKey = useRoomStore((state) => state.moi.selectedArcKey);
   const setSelectedArc = useRoomStore((state) => state.moi.setSelectedArc);
   const clearSelectedArc = useRoomStore((state) => state.moi.clearSelectedArc);
@@ -98,7 +100,7 @@ export function useArcCustomLayers(
 
   const visibleArcRows = useMemo(() => {
     const arcRows = arcCacheEntry?.arcRows ?? [];
-    const [timeStart, timeEnd] = applied.timeRange;
+    const [timeStart, timeEnd] = playbackTimeRange;
 
     return arcRows.filter(
       (row) => {
@@ -106,7 +108,7 @@ export function useArcCustomLayers(
         return timestampMsOfDay >= timeStart && timestampMsOfDay <= timeEnd;
       },
     );
-  }, [applied.timeRange, arcCacheEntry]);
+  }, [arcCacheEntry, playbackTimeRange]);
 
   useEffect(() => {
     if (!mapId || !applied.layers.arc || !arcCacheEntry?.arcRows.length) {

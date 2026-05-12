@@ -12,18 +12,22 @@ import {
   derivePlaybackRange,
   PLAYBACK_INITIAL_SPEED,
 } from '../lib/timeplayback';
-import type {AppSet} from './appActionTypes';
+import type {AppGet, AppSet} from './appActionTypes';
 
 // 這些是播放邏輯 
 import {
+  APPLIED_PLAYBACK_SYNC_BUCKET_MS,
   clampActiveTimeRange,
   getActiveWindowWidth,
   getPlaybackPosition,
+  shouldSyncAppliedTimeRange,
 } from './playbackTiming';
+import {syncPlaybackRuntimeTimeRange} from './playbackRuntime';
 import type {AppSliceState} from './appStoreTypes';
 
 export function createPlaybackSlice(
   set: AppSet,
+  get: AppGet,
 ): Pick<
   AppSliceState['moi'],
   | 'startPlayback'
@@ -79,6 +83,7 @@ export function createPlaybackSlice(
           },
         };
       });
+      syncPlaybackRuntimeTimeRange(get().moi.applied.timeRange, Date.now(), true);
     },
     pausePlayback: () => {
       set((state) => {
@@ -114,6 +119,7 @@ export function createPlaybackSlice(
           },
         };
       });
+      syncPlaybackRuntimeTimeRange(get().moi.applied.timeRange, Date.now(), true);
     },
     
     // 每一幀更新
@@ -133,8 +139,10 @@ export function createPlaybackSlice(
           activeWindowWidth,
           state.moi.displayTimeRange,
         );
+        syncPlaybackRuntimeTimeRange(nextTimeRange, now, false);
 
         if (nextPlaybackPosition >= state.moi.displayTimeRange[1]) {
+          syncPlaybackRuntimeTimeRange(nextTimeRange, now, true);
           return {
             moi: {
               ...state.moi,
@@ -153,6 +161,16 @@ export function createPlaybackSlice(
           };
         }
 
+        const shouldSyncApplied = shouldSyncAppliedTimeRange(
+          state.moi.applied.timeRange,
+          nextTimeRange,
+          APPLIED_PLAYBACK_SYNC_BUCKET_MS,
+        );
+
+        if (!shouldSyncApplied) {
+          return state;
+        }
+
         return {
           moi: {
             ...state.moi,
@@ -160,10 +178,12 @@ export function createPlaybackSlice(
               ...state.moi.draft,
               timeRange: nextTimeRange,
             },
-            applied: {
-              ...state.moi.applied,
-              timeRange: nextTimeRange,
-            },
+            applied: shouldSyncApplied
+              ? {
+                  ...state.moi.applied,
+                  timeRange: nextTimeRange,
+                }
+              : state.moi.applied,
           },
         };
       });
@@ -203,6 +223,7 @@ export function createPlaybackSlice(
           },
         };
       });
+      syncPlaybackRuntimeTimeRange(get().moi.applied.timeRange, Date.now(), true);
     },
 
     // 改變時間視窗（UI）
@@ -242,6 +263,7 @@ export function createPlaybackSlice(
           },
         };
       });
+      syncPlaybackRuntimeTimeRange(get().moi.applied.timeRange, Date.now(), true);
     },
 
     // 設定播放範圍
@@ -267,6 +289,7 @@ export function createPlaybackSlice(
           },
         };
       });
+      syncPlaybackRuntimeTimeRange(get().moi.applied.timeRange, Date.now(), true);
     },
 
     // 改播放速度
@@ -301,6 +324,7 @@ export function createPlaybackSlice(
           },
         };
       });
+      syncPlaybackRuntimeTimeRange(get().moi.applied.timeRange, Date.now(), true);
     },
   };
 }

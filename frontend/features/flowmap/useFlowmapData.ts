@@ -9,6 +9,7 @@ import {millisecondsRangeToSeconds} from '../../lib/timeplayback';
 import type {QueryRoadFlowRow, QueryRoadNodeTransitionRow} from '../../types';
 import {buildFlowmapSourceQuery, buildRoadFlowSourceQuery} from './flowmapSql';
 import {
+  bucketFlowmapTimeRange,
   buildFlowmapCacheKey,
   getRoadNodeTransitionEntry,
   getRoadPathSegments,
@@ -35,6 +36,10 @@ export function useFlowmapData() {
   const dataSourceStates = useRoomStore((state) => state.room.dataSourceStates);
   const preset = getDatasetPreset(applied.datasetId);
   const timeRangeSeconds = millisecondsRangeToSeconds(applied.timeRange);
+  const bucketedTimeRangeSeconds = useMemo(
+    () => bucketFlowmapTimeRange(timeRangeSeconds),
+    [timeRangeSeconds],
+  );
   const roadNetworkTable = preset.roadNetworkTable ?? SHARED_ROAD_NETWORK_TABLE;
   const roadNodeTable = preset.roadNodeTable ?? SHARED_ROAD_NODE_TABLE;
   const scenarioCacheKey = useMemo(
@@ -42,8 +47,8 @@ export function useFlowmapData() {
     [applied.datasetId, applied.modes],
   );
   const flowmapCacheKey = useMemo(
-    () => buildFlowmapCacheKey(applied.datasetId, preset.flowmapSourceType, applied.modes, timeRangeSeconds),
-    [applied.datasetId, applied.modes, preset.flowmapSourceType, timeRangeSeconds],
+    () => buildFlowmapCacheKey(applied.datasetId, preset.flowmapSourceType, applied.modes, bucketedTimeRangeSeconds),
+    [applied.datasetId, applied.modes, preset.flowmapSourceType, bucketedTimeRangeSeconds],
   );
   const cachedTripEntry = sharedTripCacheRef.current.get(scenarioCacheKey) ?? null;
   const cachedTrajectoryData = getTrajectoryFlowmapData(flowmapCacheKey);
@@ -107,7 +112,7 @@ export function useFlowmapData() {
 
       return setTrajectoryFlowmapData(
         flowmapCacheKey,
-        transformTrajectoryRowsToFlowmapData(cachedTripEntry.trajectoryRows, applied.modes, timeRangeSeconds),
+        transformTrajectoryRowsToFlowmapData(cachedTripEntry.trajectoryRows, applied.modes, bucketedTimeRangeSeconds),
       );
     }
 
@@ -123,7 +128,7 @@ export function useFlowmapData() {
       const rows = Array.from(flowmapResult.data.rows()) as QueryRoadNodeTransitionRow[];
       return setRoadNodeTransitionEntry(flowmapCacheKey, {
         rows,
-        data: transformRoadNodeTransitionRowsToFlowmapData(rows, applied.modes, timeRangeSeconds),
+        data: transformRoadNodeTransitionRowsToFlowmapData(rows, applied.modes, bucketedTimeRangeSeconds),
       }).data;
     }
 
@@ -136,7 +141,7 @@ export function useFlowmapData() {
     flowmapCacheKey,
     flowmapResult.data,
     preset.flowmapSourceType,
-    timeRangeSeconds,
+    bucketedTimeRangeSeconds,
   ]);
 
   const roadSegments = useMemo(() => {
@@ -150,9 +155,9 @@ export function useFlowmapData() {
 
     return setRoadPathSegments(
       flowmapCacheKey,
-      transformRoadFlowRowsToSegments(roadFlowResult.data.rows(), applied.modes, timeRangeSeconds),
+      transformRoadFlowRowsToSegments(roadFlowResult.data.rows(), applied.modes, bucketedTimeRangeSeconds),
     );
-  }, [applied.modes, cachedRoadPathSegments, flowmapCacheKey, roadFlowResult.data, timeRangeSeconds]);
+  }, [applied.modes, bucketedTimeRangeSeconds, cachedRoadPathSegments, flowmapCacheKey, roadFlowResult.data]);
 
   const flowmapError = flowmapResult.error ?? roadFlowResult.error;
   const flowmapLoading = flowmapResult.isLoading || roadFlowResult.isLoading;

@@ -9,6 +9,7 @@ import {
   transformTrajectoryRowsToFlowmapData,
 } from '../features/flowmap/flowmapTransform';
 import {segmentTripRows} from '../components/layers/tripsLayer/tripTransform';
+import {secondsOfDayToPlaybackMs} from '../lib/timeplayback';
 import {flattenHeatmapRows, normalizeNumericArray} from '../lib/transforms';
 import type {
   QueryRoadFlowRow,
@@ -94,30 +95,30 @@ describe('transform helpers', () => {
     ]);
     expect(data.flows).toEqual([
       {
-        id: '121.5,25->121.6,25.1:2:10980',
+        id: '121.5,25->121.6,25.1:2:10800',
         origin: '121.5,25',
         dest: '121.6,25.1',
         count: 2,
         mode: 2,
         modeLabel: 'Car',
-        timestamp: 10_980,
-        timestampMs: 1_704_078_180_000,
-        timeBucket: 10_980,
+        timestamp: 10_800,
+        timestampMs: secondsOfDayToPlaybackMs(10_800),
+        timeBucket: 10_800,
       },
       {
-        id: '121.6,25.1->121.7,25.2:2:10980',
+        id: '121.6,25.1->121.7,25.2:2:10800',
         origin: '121.6,25.1',
         dest: '121.7,25.2',
         count: 1,
         mode: 2,
         modeLabel: 'Car',
-        timestamp: 10_980,
-        timestampMs: 1_704_078_180_000,
-        timeBucket: 10_980,
+        timestamp: 10_800,
+        timestampMs: secondsOfDayToPlaybackMs(10_800),
+        timeBucket: 10_800,
       },
     ]);
     expect(FLOWMAP_COORD_PRECISION).toBe(4);
-    expect(FLOWMAP_TIME_BUCKET_SECONDS).toBe(60);
+    expect(FLOWMAP_TIME_BUCKET_SECONDS).toBe(600);
   });
 
   it('aggregates road-node transition rows into the same flowmap layer shape', () => {
