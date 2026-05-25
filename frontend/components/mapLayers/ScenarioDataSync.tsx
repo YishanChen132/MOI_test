@@ -9,11 +9,12 @@ import type {QueryTrajectoryRow} from '../../types';
 import {useRoomStore} from '../../app/store';
 import {
   buildScenarioCacheKey,
+  getArcCacheEntry,
+  getTripCacheEntry,
   type ArcCacheEntry,
   type TripCacheEntry,
 } from './scenario/scenarioDataSyncHelpers';
 import {
-  buildPlaybackHistogramBinsFromArcRows,
   buildPlaybackHistogramBinsFromTripRows,
 } from './scenario/scenarioCacheBuilders';
 import {useArcDataSync} from './scenario/useArcDataSync';
@@ -21,17 +22,24 @@ import {useKeplerDatasetSync} from './scenario/useKeplerDatasetSync';
 import {useScenarioRunCompletion} from './scenario/useScenarioRunCompletion';
 import {useScenarioSourceSync} from './scenario/useScenarioSourceSync';
 import {useTripDataSync} from './scenario/useTripDataSync';
+import type {ScenarioViewportState} from './scenario/useScenarioViewportBounds';
 
 type ScenarioDataSyncProps = {
   mapId: string;
   tripCacheRef: MutableRefObject<Map<string, TripCacheEntry>>;
   arcCacheRef: MutableRefObject<Map<string, ArcCacheEntry>>;
+  viewportState: ScenarioViewportState;
+  cacheRevision: number;
+  onScenarioCacheUpdated: () => void;
 };
 
 export function ScenarioDataSync({
   mapId,
   tripCacheRef,
   arcCacheRef,
+  viewportState,
+  cacheRevision,
+  onScenarioCacheUpdated,
 }: ScenarioDataSyncProps) {
   const applied = useRoomStore((state) => state.moi.applied);
   const completeRun = useRoomStore((state) => state.moi.completeRun);
@@ -40,17 +48,18 @@ export function ScenarioDataSync({
   const setPlaybackHistogramBins = useRoomStore((state) => state.moi.setPlaybackHistogramBins);
   const roomInitialized = useRoomStore((state) => state.room.initialized);
   const preset = getDatasetPreset(applied.datasetId);
+  const {debouncedBounds, debouncedBoundsKey} = viewportState;
 
   const needsTrajectoryFlowmapSource = flowmapEnabled && preset.flowmapSourceType === 'trajectory';
   const needsTripSource = applied.layers.trips || applied.layers.heatmap || needsTrajectoryFlowmapSource;
   const needsArcSource = applied.layers.arc;
   const hasSelectedModes = applied.modes.length > 0;
   const scenarioCacheKey = useMemo(
-    () => buildScenarioCacheKey(applied.datasetId, applied.modes),
-    [applied.datasetId, applied.modes],
+    () => buildScenarioCacheKey(applied.datasetId, applied.modes, debouncedBoundsKey),
+    [applied.datasetId, applied.modes, debouncedBoundsKey],
   );
-  const cachedTripEntry = tripCacheRef.current.get(scenarioCacheKey) ?? null;
-  const cachedArcEntry = arcCacheRef.current.get(scenarioCacheKey) ?? null;
+  const cachedTripEntry = getTripCacheEntry(tripCacheRef, scenarioCacheKey);
+  const cachedArcEntry = getArcCacheEntry(arcCacheRef, scenarioCacheKey);
   const activeSourceSpecs = useMemo(
     () => getPresetRoomDataSources(applied.datasetId),
     [applied.datasetId],
@@ -58,6 +67,18 @@ export function ScenarioDataSync({
   const playbackRangeSeconds = useMemo(
     () => millisecondsRangeToSeconds(PLAYBACK_DOMAIN),
     [],
+  );
+  const datasetSyncApplied = useMemo(
+    () => ({...applied}),
+    [
+      applied.datasetId,
+      applied.layers.arc,
+      applied.layers.boundary,
+      applied.layers.heatmap,
+      applied.layers.trips,
+      applied.modes,
+      applied.requestId,
+    ],
   );
 
   const {activeSourceError, activeSourcesReady} = useScenarioSourceSync({
@@ -70,45 +91,50 @@ export function ScenarioDataSync({
 
   const tripResult = useSql<QueryTrajectoryRow>({
     query: buildTripSourceQuery(applied),
-    enabled: activeSourcesReady && needsTripSource && hasSelectedModes && !cachedTripEntry,
+    enabled: activeSourcesReady && hasSelectedModes && !cachedTripEntry,
   });
 
   const arcResult = useSql<QueryTrajectoryRow>({
     query: buildArcSourceQuery(applied),
-    enabled: activeSourcesReady && needsArcSource && hasSelectedModes && !cachedArcEntry,
+    enabled: activeSourcesReady && hasSelectedModes && !cachedArcEntry,
   });
 
   useTripDataSync({
     activeSourcesReady,
     applied,
     hasSelectedModes,
-    needsTripSource,
     playbackRangeSeconds,
     scenarioCacheKey,
     tripCacheRef,
     tripResult,
+    viewportBounds: debouncedBounds,
+    onScenarioCacheUpdated,
   });
 
   useArcDataSync({
     activeSourcesReady,
     applied,
     hasSelectedModes,
-    needsArcSource,
     scenarioCacheKey,
     arcCacheRef,
     arcResult,
+    viewportBounds: debouncedBounds,
+    onScenarioCacheUpdated,
   });
 
   useKeplerDatasetSync({
     activeSourcesReady,
-    applied,
+    applied: datasetSyncApplied,
     arcCacheRef,
+    tripCacheRef,
     hasSelectedModes,
     layerOpacity,
     mapId,
     needsArcSource,
+    needsTripSource,
     roomInitialized,
     scenarioCacheKey,
+    cacheRevision,
   });
 
   useScenarioRunCompletion({
@@ -126,28 +152,12 @@ export function ScenarioDataSync({
     scenarioCacheKey,
     tripCacheRef,
     tripResult,
+    cacheRevision,
   });
 
   useEffect(() => {
     if (!activeSourcesReady || !hasSelectedModes) {
       setPlaybackHistogramBins([]);
-      return;
-    }
-
-    if (applied.layers.arc && cachedArcEntry) {
-      setPlaybackHistogramBins(buildPlaybackHistogramBinsFromArcRows(cachedArcEntry.arcRows));
-      return;
-    }
-
-    if ((applied.layers.trips || applied.layers.heatmap) && cachedTripEntry) {
-      setPlaybackHistogramBins(
-        buildPlaybackHistogramBinsFromTripRows(cachedTripEntry.trajectoryRows, applied.modes),
-      );
-      return;
-    }
-
-    if (cachedArcEntry) {
-      setPlaybackHistogramBins(buildPlaybackHistogramBinsFromArcRows(cachedArcEntry.arcRows));
       return;
     }
 
@@ -161,11 +171,7 @@ export function ScenarioDataSync({
     setPlaybackHistogramBins([]);
   }, [
     activeSourcesReady,
-    applied.layers.arc,
-    applied.layers.heatmap,
-    applied.layers.trips,
     applied.modes,
-    cachedArcEntry,
     cachedTripEntry,
     hasSelectedModes,
     setPlaybackHistogramBins,

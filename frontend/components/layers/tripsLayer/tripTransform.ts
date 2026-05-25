@@ -6,6 +6,7 @@ import type {
   TimeRangeSeconds,
   TripFeatureCollection,
   TripLayerDatum,
+  TripTrailPointDatum,
 } from '../../../types';
 import {forEachTripSegment} from './tripSegments';
 
@@ -66,6 +67,31 @@ export function buildTripLayerData(
   });
 
   return trips;
+}
+
+export function buildTripTrailPointData(
+  rows: Iterable<QueryTrajectoryRow>,
+  selectedModes: readonly number[],
+  timeRange: TimeRangeSeconds,
+): TripTrailPointDatum[] {
+  const points: TripTrailPointDatum[] = [];
+
+  forEachTripSegment(rows, selectedModes, timeRange, (segment) => {
+    for (const point of segment.points) {
+      points.push({
+        agent_id: segment.row.agent_id,
+        segment_index: segment.segmentIndex,
+        mode: segment.mode,
+        mode_label: toModeLabel(segment.mode),
+        lng: point.lng,
+        lat: point.lat,
+        timestamp: point.timestamp,
+        timestamp_ms: point.timestamp * 1_000,
+      });
+    }
+  });
+
+  return points;
 }
 
 export function countTripLayerSegments(

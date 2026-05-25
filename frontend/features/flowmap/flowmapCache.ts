@@ -38,13 +38,20 @@ export function buildFlowmapCacheKey(
   sourceType: FlowmapSourceType,
   modes: readonly number[],
   timeRangeSeconds: readonly [number, number],
+  viewportBoundsKey?: string | null,
 ): string {
-  return [
+  const parts = [
     datasetId,
     sourceType,
     buildFlowmapModeKey(modes),
     buildFlowmapTimeRangeKey(timeRangeSeconds),
-  ].join('::');
+  ];
+
+  if (viewportBoundsKey) {
+    parts.push(viewportBoundsKey);
+  }
+
+  return parts.join('::');
 }
 
 export function getTrajectoryFlowmapData(cacheKey: string): FlowmapLayerData | null {

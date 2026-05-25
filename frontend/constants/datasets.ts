@@ -14,6 +14,8 @@ export type DatasetPresetId =
   | '2000'
   | '5000'
   | '9000'
+  | '20000'
+  | '42082'
   | 'taipei_edge_flowmap'
   | 'taipei_road_node_flowmap';
 
@@ -26,6 +28,7 @@ export type DatasetPreset = {
   arcTable: string;
   arcUrl: string;
   arcRowLimit?: number;
+  arcValueShape?: 'list' | 'scalar';
   flowmapSourceType: FlowmapSourceType;
   flowmapTable?: string;
   flowmapUrl?: string;
@@ -54,6 +57,7 @@ export const DATASET_PRESETS: Record<DatasetPresetId, DatasetPreset> = {
     arcTable: 'moi_arc_9000',
     arcUrl: `${baseUrl}/abm_od_arc_outcome_9000.parquet`,
     arcRowLimit: 100,
+    arcValueShape: 'list',
     flowmapSourceType: 'trajectory',
     description: 'Trajectory flowmap preset using the smallest mobility sample.',
   },
@@ -64,6 +68,7 @@ export const DATASET_PRESETS: Record<DatasetPresetId, DatasetPreset> = {
     tripUrl: `${baseUrl}/1209_arrow_trip_2000_from_9000.parquet`,
     arcTable: 'moi_arc_2000',
     arcUrl: `${baseUrl}/1209_arrow_od_arc_2000_from_9000.parquet`,
+    arcValueShape: 'list',
     flowmapSourceType: 'trajectory',
     description: 'Trajectory flowmap preset for the balanced benchmark.',
   },
@@ -74,6 +79,7 @@ export const DATASET_PRESETS: Record<DatasetPresetId, DatasetPreset> = {
     tripUrl: `${baseUrl}/1209_arrow_trip_5000_from_9000.parquet`,
     arcTable: 'moi_arc_5000',
     arcUrl: `${baseUrl}/1209_arrow_od_arc_5000_from_9000.parquet`,
+    arcValueShape: 'list',
     flowmapSourceType: 'trajectory',
     description: 'Trajectory flowmap preset for heavier rendering stress.',
   },
@@ -84,8 +90,31 @@ export const DATASET_PRESETS: Record<DatasetPresetId, DatasetPreset> = {
     tripUrl: `${baseUrl}/abm_format_outcome_9000.parquet`,
     arcTable: 'moi_arc_9000',
     arcUrl: `${baseUrl}/abm_od_arc_outcome_9000.parquet`,
+    arcValueShape: 'list',
     flowmapSourceType: 'trajectory',
     description: 'Trajectory flowmap preset for the heaviest benchmark run.',
+  },
+  '20000': {
+    id: '20000',
+    label: '20,000',
+    tripTable: 'moi_trip_20000',
+    tripUrl: `${baseUrl}/abm_format_outcome_20000.parquet`,
+    arcTable: 'moi_arc_20000',
+    arcUrl: `${baseUrl}/abm_od_arc_outcome_20000.parquet`,
+    arcValueShape: 'scalar',
+    flowmapSourceType: 'trajectory',
+    description: 'Trajectory flowmap preset for the 20,000-row stress benchmark.',
+  },
+  '42082': {
+    id: '42082',
+    label: '42,082',
+    tripTable: 'moi_trip_42082',
+    tripUrl: `${baseUrl}/abm_format_outcome_42082.parquet`,
+    arcTable: 'moi_arc_42082',
+    arcUrl: `${baseUrl}/abm_od_arc_outcome_42082.parquet`,
+    arcValueShape: 'scalar',
+    flowmapSourceType: 'trajectory',
+    description: 'Trajectory flowmap preset for the 42,082-row benchmark.',
   },
   'taipei_edge_flowmap': {
     id: 'taipei_edge_flowmap',
@@ -94,6 +123,7 @@ export const DATASET_PRESETS: Record<DatasetPresetId, DatasetPreset> = {
     tripUrl: `${baseUrl}/1209_arrow_trip_100.parquet`,
     arcTable: 'moi_arc_2000',
     arcUrl: `${baseUrl}/1209_arrow_od_arc_2000_from_9000.parquet`,
+    arcValueShape: 'list',
     flowmapSourceType: 'road-path',
     roadFlowTable: 'moi_road_flow_9000',
     roadFlowUrl: `${baseUrl}/taipei_osm_edge_flows_9000.json`,
@@ -113,6 +143,7 @@ export const DATASET_PRESETS: Record<DatasetPresetId, DatasetPreset> = {
     tripUrl: `${baseUrl}/1209_arrow_trip_100.parquet`,
     arcTable: 'moi_arc_2000',
     arcUrl: `${baseUrl}/1209_arrow_od_arc_2000_from_9000.parquet`,
+    arcValueShape: 'list',
     flowmapSourceType: 'road-node-transition',
     flowmapTable: 'moi_flowmap_node_transitions_shuangbei_osm',
     flowmapUrl: `${baseUrl}/shuangbei_osm_flowmap_node_transitions.json`,
@@ -124,7 +155,7 @@ export const DATASET_PRESETS: Record<DatasetPresetId, DatasetPreset> = {
   },
 };
 
-export const DEFAULT_DATASET_PRESET_ID: DatasetPresetId = '9000';
+export const DEFAULT_DATASET_PRESET_ID: DatasetPresetId = '42082';
 
 export function getPresetRoomDataSources(datasetId: DatasetPresetId): UrlDataSource[] {
   const preset = getDatasetPreset(datasetId);

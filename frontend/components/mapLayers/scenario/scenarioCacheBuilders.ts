@@ -1,8 +1,9 @@
 // 這個檔案負責把 SQL query 結果整理成地圖同步流程可重用的 scenario cache entries。
 import type * as arrow from 'apache-arrow';
 import {buildArcDatasets} from '../../layers/odArcLayer/arcKepler';
+import {buildTripDatasets} from '../../layers/tripsLayer/tripKepler';
 import {flattenArcRows} from '../../layers/odArcLayer/arcTransform';
-import {countTripLayerSegments} from '../../layers/tripsLayer/tripTransform';
+import {countTripLayerSegments, segmentTripRows} from '../../layers/tripsLayer/tripTransform';
 import {millisecondsRangeToSeconds, PLAYBACK_DOMAIN} from '../../../lib/timeplayback';
 import {
   getTrajectoryPointCount,
@@ -12,6 +13,7 @@ import type {
   AppliedScenario,
   ArcDatum,
   BenchmarkCounts,
+  MapViewportBounds,
   PlaybackHistogramBin,
   QueryTrajectoryRow,
   TimeRangeMilliseconds,
@@ -24,6 +26,50 @@ import type {
 
 const PLAYBACK_HISTOGRAM_BUCKET_COUNT = 48;
 
+function pointInBounds(
+  lng: number,
+  lat: number,
+  bounds: MapViewportBounds,
+): boolean {
+  return lng >= bounds.west && lng <= bounds.east && lat >= bounds.south && lat <= bounds.north;
+}
+
+export function filterTrajectoryRowsByBounds(
+  rows: Iterable<QueryTrajectoryRow>,
+  bounds?: MapViewportBounds | null,
+): QueryTrajectoryRow[] {
+  const allRows = Array.from(rows);
+
+  if (!bounds) {
+    return allRows;
+  }
+
+  const result: QueryTrajectoryRow[] = [];
+
+  for (const row of allRows) {
+    const paths = normalizeNumericArray(row.paths);
+    const pointCount = Math.floor(paths.length / 2);
+    let isVisible = false;
+
+    for (let pointIndex = 0; pointIndex < pointCount; pointIndex += 1) {
+      const lng = paths[pointIndex * 2];
+      const lat = paths[pointIndex * 2 + 1];
+
+      if (Number.isFinite(lng) && Number.isFinite(lat) && pointInBounds(lng, lat, bounds)) {
+        isVisible = true;
+        break;
+      }
+    }
+
+    if (isVisible) {
+      result.push(row);
+    }
+  }
+
+  // 初次載入若 viewport 尚未落在資料範圍內，保留全量資料避免地圖永遠沒有機會 fit 到資料上。
+  return result.length > 0 ? result : allRows;
+}
+
 export function buildTripCacheEntry(
   tripRows: QueryTrajectoryRow[],
   playbackRangeSeconds: TimeRangeSeconds,
@@ -32,6 +78,7 @@ export function buildTripCacheEntry(
 ): TripCacheEntry {
   return {
     arrowTable,
+    tripDatasets: buildTripDatasets(segmentTripRows(tripRows, selectedModes, playbackRangeSeconds)),
     trajectoryRows: tripRows,
     tripSegments: countTripLayerSegments(tripRows, selectedModes, playbackRangeSeconds),
     heatmapPoints: tripRows.length,
@@ -39,7 +86,7 @@ export function buildTripCacheEntry(
 }
 
 export function buildArcCacheEntry(
-  arcRowsSource: Iterable<QueryTrajectoryRow>,
+  arcRowsSource: QueryTrajectoryRow[],
   selectedModes: readonly number[],
 ): ArcCacheEntry {
   const arcRows = flattenArcRows(

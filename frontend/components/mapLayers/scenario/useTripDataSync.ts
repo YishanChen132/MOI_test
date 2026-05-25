@@ -2,48 +2,58 @@
 import {useEffect, type MutableRefObject} from 'react';
 import type {
   AppliedScenario,
+  MapViewportBounds,
   TimeRangeSeconds,
 } from '../../../types';
-import {buildTripCacheEntry} from './scenarioCacheBuilders';
-import type {TripCacheEntry} from './scenarioDataSyncHelpers';
+import {
+  buildTripCacheEntry,
+  filterTrajectoryRowsByBounds,
+} from './scenarioCacheBuilders';
+import {
+  getTripCacheEntry,
+  setTripCacheEntry,
+  type TripCacheEntry,
+} from './scenarioDataSyncHelpers';
 import type {TrajectoryQueryResult} from './scenarioQueryTypes';
 
 type UseTripDataSyncArgs = {
   activeSourcesReady: boolean;
   applied: AppliedScenario;
   hasSelectedModes: boolean;
-  needsTripSource: boolean;
   playbackRangeSeconds: TimeRangeSeconds;
   scenarioCacheKey: string;
   tripCacheRef: MutableRefObject<Map<string, TripCacheEntry>>;
   tripResult: TrajectoryQueryResult;
+  viewportBounds?: MapViewportBounds | null;
+  onScenarioCacheUpdated: () => void;
 };
 
 export function useTripDataSync({
   activeSourcesReady,
   applied,
   hasSelectedModes,
-  needsTripSource,
   playbackRangeSeconds,
   scenarioCacheKey,
   tripCacheRef,
   tripResult,
+  viewportBounds,
+  onScenarioCacheUpdated,
 }: UseTripDataSyncArgs) {
-  const cachedTripEntry = tripCacheRef.current.get(scenarioCacheKey) ?? null;
+  const cachedTripEntry = getTripCacheEntry(tripCacheRef, scenarioCacheKey);
 
   useEffect(() => {
     if (
       !activeSourcesReady ||
       !hasSelectedModes ||
-      !needsTripSource ||
       cachedTripEntry ||
       !tripResult.data
     ) {
       return;
     }
 
-    const tripRows = Array.from(tripResult.data.rows());
-    tripCacheRef.current.set(
+    const tripRows = filterTrajectoryRowsByBounds(tripResult.data.rows(), viewportBounds);
+    setTripCacheEntry(
+      tripCacheRef,
       scenarioCacheKey,
       buildTripCacheEntry(
         tripRows,
@@ -52,15 +62,17 @@ export function useTripDataSync({
         tripResult.data.arrowTable ?? null,
       ),
     );
+    onScenarioCacheUpdated();
   }, [
     activeSourcesReady,
     applied.modes,
     cachedTripEntry,
     hasSelectedModes,
-    needsTripSource,
     playbackRangeSeconds,
     scenarioCacheKey,
     tripCacheRef,
     tripResult.data,
+    viewportBounds,
+    onScenarioCacheUpdated,
   ]);
 }

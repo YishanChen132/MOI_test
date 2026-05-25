@@ -3,7 +3,12 @@ import {useSql} from '@sqlrooms/duckdb';
 import {DataSourceStatus} from '@sqlrooms/room-shell';
 import {useMemo} from 'react';
 import {useRoomStore} from '../../app/store';
-import {buildScenarioCacheKey, sharedTripCacheRef} from '../../components/mapLayers/scenario/scenarioDataSyncHelpers';
+import {
+  buildScenarioCacheKey,
+  getTripCacheEntry,
+  sharedTripCacheRef,
+  type TripCacheEntry,
+} from '../../components/mapLayers/scenario/scenarioDataSyncHelpers';
 import {getDatasetPreset, SHARED_ROAD_NODE_TABLE, SHARED_ROAD_NETWORK_TABLE} from '../../constants/datasets';
 import {millisecondsRangeToSeconds} from '../../lib/timeplayback';
 import type {QueryRoadFlowRow, QueryRoadNodeTransitionRow} from '../../types';
@@ -25,11 +30,15 @@ import {
   transformTrajectoryRowsToFlowmapData,
 } from './flowmapTransform';
 import type {FlowmapLayerData, FlowmapRoadSegment} from './flowmapTypes';
+import type {ScenarioViewportState} from '../../components/mapLayers/scenario/useScenarioViewportBounds';
 
 const EMPTY_FLOWMAP_DATA: FlowmapLayerData = {locations: [], flows: []};
 const EMPTY_ROAD_SEGMENTS: FlowmapRoadSegment[] = [];
 
-export function useFlowmapData() {
+export function useFlowmapData(
+  viewportState: ScenarioViewportState,
+  cacheRevision: number,
+) {
   const applied = useRoomStore((state) => state.moi.applied);
   const flowmapEnabled = useRoomStore((state) => state.moi.flowmapEnabled);
   const roomInitialized = useRoomStore((state) => state.room.initialized);
@@ -42,15 +51,25 @@ export function useFlowmapData() {
   );
   const roadNetworkTable = preset.roadNetworkTable ?? SHARED_ROAD_NETWORK_TABLE;
   const roadNodeTable = preset.roadNodeTable ?? SHARED_ROAD_NODE_TABLE;
+  const {debouncedBoundsKey} = viewportState;
   const scenarioCacheKey = useMemo(
-    () => buildScenarioCacheKey(applied.datasetId, applied.modes),
-    [applied.datasetId, applied.modes],
+    () => buildScenarioCacheKey(applied.datasetId, applied.modes, debouncedBoundsKey),
+    [applied.datasetId, applied.modes, debouncedBoundsKey],
   );
   const flowmapCacheKey = useMemo(
-    () => buildFlowmapCacheKey(applied.datasetId, preset.flowmapSourceType, applied.modes, bucketedTimeRangeSeconds),
-    [applied.datasetId, applied.modes, preset.flowmapSourceType, bucketedTimeRangeSeconds],
+    () => buildFlowmapCacheKey(
+      applied.datasetId,
+      preset.flowmapSourceType,
+      applied.modes,
+      bucketedTimeRangeSeconds,
+      debouncedBoundsKey,
+    ),
+    [applied.datasetId, applied.modes, preset.flowmapSourceType, bucketedTimeRangeSeconds, debouncedBoundsKey],
   );
-  const cachedTripEntry = sharedTripCacheRef.current.get(scenarioCacheKey) ?? null;
+  const cachedTripEntry = useMemo(
+    () => getTripCacheEntry(sharedTripCacheRef as {current: Map<string, TripCacheEntry>}, scenarioCacheKey),
+    [cacheRevision, scenarioCacheKey],
+  );
   const cachedTrajectoryData = getTrajectoryFlowmapData(flowmapCacheKey);
   const cachedRoadNodeTransitionEntry = getRoadNodeTransitionEntry(flowmapCacheKey);
   const cachedRoadPathSegments = getRoadPathSegments(flowmapCacheKey);

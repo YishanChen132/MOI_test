@@ -1,3 +1,4 @@
+// 這個檔案負責驗證不同 flowmap preset 會產生正確的 SQL 查詢內容。
 import {buildFlowmapSourceQuery, buildRoadFlowSourceQuery} from '../features/flowmap/flowmapSql';
 import {ROAD_NODE_TRANSITION_FLOWMAP_LIMIT} from '../features/flowmap/flowmapCache';
 import type {AppliedScenario} from '../types';

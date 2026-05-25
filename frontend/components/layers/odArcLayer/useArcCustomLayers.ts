@@ -8,8 +8,10 @@ import {MODE_DEFINITIONS} from '../../../constants/modes';
 import type {ArcDatum} from '../../../types';
 import {
   buildScenarioCacheKey,
+  getArcCacheEntry,
   type ArcCacheEntry,
 } from '../../mapLayers/scenario/scenarioDataSyncHelpers';
+import type {ScenarioViewportState} from '../../mapLayers/scenario/useScenarioViewportBounds';
 
 const ARC_LAYER_ID = 'moi-arc-custom-layer';
 const ARC_BLEND_PARAMETERS = {
@@ -70,6 +72,8 @@ function getArcBounds(arcRows: readonly ArcDatum[]): [number, number, number, nu
 export function useArcCustomLayers(
   arcCacheRef: MutableRefObject<Map<string, ArcCacheEntry>>,
   mapId: string | null,
+  viewportState: ScenarioViewportState,
+  cacheRevision: number,
 ) {
   const applied = useRoomStore((state) => state.moi.applied);
   const runStatus = useRoomStore((state) => state.moi.runStatus);
@@ -79,15 +83,20 @@ export function useArcCustomLayers(
   const setSelectedArc = useRoomStore((state) => state.moi.setSelectedArc);
   const clearSelectedArc = useRoomStore((state) => state.moi.clearSelectedArc);
   const lastFitKeyRef = useRef<string | null>(null);
-
-  const scenarioCacheKey = useMemo(
+  const {debouncedBoundsKey} = viewportState;
+  const baseScenarioKey = useMemo(
     () => buildScenarioCacheKey(applied.datasetId, applied.modes),
     [applied.datasetId, applied.modes],
   );
 
+  const scenarioCacheKey = useMemo(
+    () => buildScenarioCacheKey(applied.datasetId, applied.modes, debouncedBoundsKey),
+    [applied.datasetId, applied.modes, debouncedBoundsKey],
+  );
+
   const arcCacheEntry = useMemo(
-    () => arcCacheRef.current.get(scenarioCacheKey) ?? null,
-    [arcCacheRef, runStatus, scenarioCacheKey],
+    () => getArcCacheEntry(arcCacheRef, scenarioCacheKey),
+    [arcCacheRef, cacheRevision, runStatus, scenarioCacheKey],
   );
 
   const modeColors = useMemo(
@@ -115,7 +124,7 @@ export function useArcCustomLayers(
       return;
     }
 
-    if (lastFitKeyRef.current === scenarioCacheKey) {
+    if (lastFitKeyRef.current === baseScenarioKey) {
       return;
     }
 
@@ -124,9 +133,9 @@ export function useArcCustomLayers(
       return;
     }
 
-    lastFitKeyRef.current = scenarioCacheKey;
+    lastFitKeyRef.current = baseScenarioKey;
     roomStore.getState().kepler.dispatchAction(mapId, fitBounds(bounds));
-  }, [applied.layers.arc, arcCacheEntry, mapId, scenarioCacheKey]);
+  }, [applied.layers.arc, arcCacheEntry, baseScenarioKey, mapId]);
 
   useEffect(() => {
     if (!selectedArcKey) {

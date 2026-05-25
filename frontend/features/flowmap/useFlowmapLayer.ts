@@ -3,6 +3,7 @@ import {PathLayer} from '@deck.gl/layers';
 import {FlowmapLayer} from '@flowmap.gl/layers';
 import {useCallback, useEffect, useMemo, useState} from 'react';
 import {useRoomStore} from '../../app/store';
+import type {ScenarioViewportState} from '../../components/mapLayers/scenario/useScenarioViewportBounds';
 import {MODE_DEFINITIONS} from '../../constants/modes';
 import type {
   FlowmapFlow,
@@ -50,13 +51,16 @@ type RoadFlowPickingInfo = {
 const FLOWMAP_COLOR_SCHEME = 'Teal';
 const FLOWMAP_HIGHLIGHT_COLOR = '#FFD166';
 
-export function useFlowmapLayer() {
+export function useFlowmapLayer(
+  viewportState: ScenarioViewportState,
+  cacheRevision: number,
+) {
   const flowmapEnabled = useRoomStore((state) => state.moi.flowmapEnabled);
   const flowmapOpacity = useRoomStore((state) => state.moi.flowmapOpacity);
   const selectedFlowId = useRoomStore((state) => state.moi.selectedFlowId);
   const setSelectedFlowId = useRoomStore((state) => state.moi.setSelectedFlowId);
   const clearSelectedFlowId = useRoomStore((state) => state.moi.clearSelectedFlowId);
-  const {preset, data, roadSegments} = useFlowmapData();
+  const {preset, data, roadSegments} = useFlowmapData(viewportState, cacheRevision);
   const [hoveredFlowTooltip, setHoveredFlowTooltip] = useState<FlowmapTooltipState | null>(null);
 
   useEffect(() => {

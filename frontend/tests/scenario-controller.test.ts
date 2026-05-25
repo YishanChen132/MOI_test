@@ -14,7 +14,7 @@ describe('scenario controller helpers', () => {
   it('creates a stable initial scenario', () => {
     const scenario = createInitialScenario();
 
-    expect(scenario.datasetId).toBe('9000');
+    expect(scenario.datasetId).toBe('42082');
     expect(scenario.layers).toEqual({
       trips: false,
       arc: true,

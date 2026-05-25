@@ -51,6 +51,23 @@ describe('transform helpers', () => {
     expect(arcRows[1]?.mode_label).toBe('Bus');
   });
 
+  it('flattens scalar arc rows where each row already represents one arc segment', () => {
+    const rows: QueryTrajectoryRow[] = [
+      {
+        agent_id: 12,
+        paths: [121.4, 25.1, 121.41, 25.11],
+        timestamps: 12_420,
+        modes: 1,
+      },
+    ];
+
+    const arcRows = flattenArcRows(rows, [1], [12_000, 12_600]);
+    expect(arcRows).toHaveLength(1);
+    expect(arcRows[0]?.segment_index).toBe(0);
+    expect(arcRows[0]?.mode_label).toBe('Walk');
+    expect(arcRows[0]?.timestamp).toBe(12_420);
+  });
+
   it('flattens heatmap points with the expected path coordinate pairing', () => {
     const rows: QueryTrajectoryRow[] = [
       {

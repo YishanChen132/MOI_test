@@ -3,6 +3,8 @@ import {getDatasetPreset} from '../../../constants/datasets';
 import {
   buildLimitClause,
   buildModeOverlapCondition,
+  buildScalarModeCondition,
+  buildScalarTimeRangeCondition,
   buildTimeOverlapCondition,
   quoteIdentifier,
 } from '../../../lib/sql';
@@ -13,6 +15,12 @@ export function buildArcSourceQuery(applied: AppliedScenario): string {
   const preset = getDatasetPreset(applied.datasetId);
   const table = quoteIdentifier(preset.arcTable);
   const [start, end] = millisecondsRangeToSeconds(PLAYBACK_DOMAIN);
+  const timeCondition = preset.arcValueShape === 'scalar'
+    ? buildScalarTimeRangeCondition('timestamps', start, end)
+    : buildTimeOverlapCondition('timestamps', start, end);
+  const modeCondition = preset.arcValueShape === 'scalar'
+    ? buildScalarModeCondition('modes', applied.modes)
+    : buildModeOverlapCondition('modes', applied.modes);
 
   return `
     SELECT
@@ -22,8 +30,8 @@ export function buildArcSourceQuery(applied: AppliedScenario): string {
       modes
     FROM ${table}
     WHERE
-      ${buildTimeOverlapCondition('timestamps', start, end)}
-      AND ${buildModeOverlapCondition('modes', applied.modes)}
+      ${timeCondition}
+      AND ${modeCondition}
     ORDER BY agent_id
     ${buildLimitClause(preset.arcRowLimit)}
   `;

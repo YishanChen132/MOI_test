@@ -1,3 +1,4 @@
+// 這個檔案負責驗證 flowmap 快取 key、時間分桶與清 cache 行為是否正確。
 import {
   bucketFlowmapTimeRange,
   ROAD_NODE_TRANSITION_FLOWMAP_LIMIT,

@@ -10,6 +10,8 @@ import {
 } from './scenarioCacheBuilders';
 import {
   EMPTY_COUNTS,
+  getArcCacheEntry,
+  getTripCacheEntry,
   type ArcCacheEntry,
   type TripCacheEntry,
 } from './scenarioDataSyncHelpers';
@@ -35,6 +37,7 @@ type UseScenarioRunCompletionArgs = {
   scenarioCacheKey: string;
   tripCacheRef: MutableRefObject<Map<string, TripCacheEntry>>;
   tripResult: TrajectoryQueryResult;
+  cacheRevision: number;
 };
 
 export function useScenarioRunCompletion({
@@ -52,6 +55,7 @@ export function useScenarioRunCompletion({
   scenarioCacheKey,
   tripCacheRef,
   tripResult,
+  cacheRevision,
 }: UseScenarioRunCompletionArgs) {
   const processedRequestIdRef = useRef<number>(0);
 
@@ -80,8 +84,8 @@ export function useScenarioRunCompletion({
       return;
     }
 
-    const tripCacheEntry = tripCacheRef.current.get(scenarioCacheKey) ?? null;
-    const arcCacheEntry = arcCacheRef.current.get(scenarioCacheKey) ?? null;
+    const tripCacheEntry = getTripCacheEntry(tripCacheRef, scenarioCacheKey);
+    const arcCacheEntry = getArcCacheEntry(arcCacheRef, scenarioCacheKey);
     const waitingOnTrip =
       needsTripSource &&
       !tripCacheEntry &&
@@ -96,8 +100,8 @@ export function useScenarioRunCompletion({
     }
 
     const errors = [
-      tripResult.error ? `Trip source query failed: ${tripResult.error.message}` : null,
-      arcResult.error ? `Arc source query failed: ${arcResult.error.message}` : null,
+      needsTripSource && tripResult.error ? `Trip source query failed: ${tripResult.error.message}` : null,
+      needsArcSource && arcResult.error ? `Arc source query failed: ${arcResult.error.message}` : null,
     ].filter((message): message is string => Boolean(message));
 
     if (errors.length > 0) {
@@ -136,5 +140,6 @@ export function useScenarioRunCompletion({
     tripResult.data,
     tripResult.error,
     tripResult.isLoading,
+    cacheRevision,
   ]);
 }

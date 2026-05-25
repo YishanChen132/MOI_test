@@ -5,8 +5,10 @@ import {usePlaybackLayerTimeRange} from '../../../app/usePlaybackRuntime';
 import {millisecondsRangeToSeconds} from '../../../lib/timeplayback';
 import {
   buildScenarioCacheKey,
+  getTripCacheEntry,
   type TripCacheEntry,
 } from '../../mapLayers/scenario/scenarioDataSyncHelpers';
+import type {ScenarioViewportState} from '../../mapLayers/scenario/useScenarioViewportBounds';
 import {ArrowPathLayer} from './ArrowPathLayer';
 
 const HEATMAP_BLEND_PARAMETERS = {
@@ -22,20 +24,23 @@ const HEATMAP_QUANTIZATION_DIGITS = null;
 
 export function useHeatmapCustomLayers(
   tripCacheRef: MutableRefObject<Map<string, TripCacheEntry>>,
+  viewportState: ScenarioViewportState,
+  cacheRevision: number,
 ) {
   const applied = useRoomStore((state) => state.moi.applied);
   const runStatus = useRoomStore((state) => state.moi.runStatus);
   const heatmapOpacity = useRoomStore((state) => state.moi.layerOpacity.heatmap);
   const playbackTimeRange = usePlaybackLayerTimeRange();
+  const {debouncedBoundsKey} = viewportState;
 
   const scenarioCacheKey = useMemo(
-    () => buildScenarioCacheKey(applied.datasetId, applied.modes),
-    [applied.datasetId, applied.modes],
+    () => buildScenarioCacheKey(applied.datasetId, applied.modes, debouncedBoundsKey),
+    [applied.datasetId, applied.modes, debouncedBoundsKey],
   );
 
   const tripCacheEntry = useMemo(
-    () => tripCacheRef.current.get(scenarioCacheKey) ?? null,
-    [runStatus, scenarioCacheKey, tripCacheRef],
+    () => getTripCacheEntry(tripCacheRef, scenarioCacheKey),
+    [cacheRevision, runStatus, scenarioCacheKey, tripCacheRef],
   );
 
   const timeRangeSeconds = useMemo(

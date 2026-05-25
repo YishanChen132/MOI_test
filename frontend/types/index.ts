@@ -10,6 +10,12 @@ export type LayerOpacity = Record<AdjustableLayerId, number>;
 
 export type TimeRangeMilliseconds = [number, number];
 export type TimeRangeSeconds = [number, number];
+export type MapViewportBounds = {
+  west: number;
+  south: number;
+  east: number;
+  north: number;
+};
 export type PlaybackHistogramBin = {
   startMs: number;
   endMs: number;
@@ -106,6 +112,17 @@ export type TripLayerDatum = {
   end_time: number;
   path: [number, number][];
   timestamps: number[];
+};
+
+export type TripTrailPointDatum = {
+  agent_id: number;
+  segment_index: number;
+  mode: number;
+  mode_label: string;
+  lng: number;
+  lat: number;
+  timestamp: number;
+  timestamp_ms: number;
 };
 
 export type ArcDatum = {
